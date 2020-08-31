@@ -42,7 +42,6 @@ First, we'll specify our parameters, $N$ and $p_0$ as before, plus the new confo
 
 ```{r 4.1}
 library(tidyverse)
-set.seed(111)
 
 N <- 100
 p_0 <- 0.5
@@ -51,7 +50,7 @@ D <- 1
 population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE, prob = c(p_0, 1 - p_0))) # create first generation
 ```
 
-Now we create another tibble, called **demonstrators** that picks, for each new individual in the next generation, three demonstrators at random from the current population of individuals. It, therefore, needs three columns/variables, one for each of the demonstrators, and $N$ rows, one for each individual. We fill each column with randomly chosen traits from the **population** tibble. We can have a look at **demonstrators** by entering its name in the R console.
+Now we create another tibble called **demonstrators** that picks, for each new individual in the next generation, three demonstrators at random from the current population of individuals. It therefore needs three columns/variables, one for each of the demonstrators, and $N$ rows, one for each individual. We fill each column with randomly chosen traits from the **population** tibble. We can have a look at **demonstrators** by entering its name in the R console.
 
 ```{r 4.2}
 # create dataframe with a set of 3 randomly-picked demonstrators for each agent
@@ -100,7 +99,7 @@ demonstrators <- add_column(demonstrators, new_trait = population$trait)
 demonstrators
 ```
 
-Because we set $D=1$ above, the new trait is always the majority trait among the three demonstrators. This is perfect conformity. We can weaken conformity by reducing $D$. Here an example with $D=0.5$. All the code is the same as what we already discussed above.
+Because we set $D=1$ above, the new trait is always the majority trait among the three demonstrators. This is perfect conformity. We can weaken conformity by reducing $D$. Here is an example with $D=0.5$. All the code is the same as what we already discussed above.
 
 ```{r 4.5}
 
@@ -204,14 +203,14 @@ We can test the function with perfect conformity ($D=1$) and plot it (again we u
 plot_multiple_runs <- function(data_model) {
   ggplot(data = data_model, aes(y = p, x = generation)) +
     geom_line(aes(colour = run)) +
-    stat_summary(fun.y = mean, geom = "line", size = 1) +
+    stat_summary(fun = mean, geom = "line", size = 1) +
     ylim(c(0, 1)) +
     theme_bw() +
     labs(y = "p (proportion of individuals with trait A)")
 }
 ```
 
-```{r 4.8}
+```{r 4.8, fig.cap = "Conformity causes one trait to spread and replace the other by favouring whichever trait is initially most common"}
 data_model <- conformist_transmission(N = 1000, p_0 = 0.5, D = 1, t_max = 50, r_max = 10)
 plot_multiple_runs(data_model)
 ```
@@ -220,26 +219,25 @@ Here we should see some lines going to $p = 1$, and some lines going to $p = 0$.
 
 What happens if we set $D = 0$?
 
-```{r 4.9}
+```{r 4.9, fig.cap = "Removing conformist bias recreates unbiased transmission, and does not systematically change trait frequencies"}
 data_model <- conformist_transmission(N = 1000, p_0 = 0.5, D = 0, t_max = 50, r_max = 10)
 plot_multiple_runs(data_model)
 ```
 
-This model is equivalent to unbiased transmission. As for the simulations described in [Chapter 1][Unbiased transmission], with a sufficiently large $N$, the frequencies fluctuate around $p = 0.5$. This underlines the effect of conformity. With unbiased transmission, majority traits are favoured because they are copied in proportion to their frequency (incidentally, it is for this reason that 'copying the majority' is not a good description of conformity in the technical sense of cultural evolution: even with unbiased copying the majority trait is copied more than the minority one). However, they reach fixation only in small populations. With conformity, instead, the majority trait is copied with a probability higher than its frequency, so that conformity drives traits to fixation as they become more and more common.
+This model is equivalent to unbiased transmission. As for the simulations described in [Chapter 1][Unbiased transmission], with a sufficiently large $N$, the frequencies fluctuate around $p = 0.5$. This underlines the effect of conformity. With unbiased transmission, majority traits are favoured because they are copied in proportion to their frequency (incidentally, it is for this reason that 'copying the majority' is not a good description of conformity in the technical sense used in the field of cultural evolution: even with unbiased copying the majority trait is copied more than the minority one). However, they reach fixation only in small populations. With conformity, instead, the majority trait is copied with a probability higher than its frequency, so that conformity drives traits to fixation as they become more and more common.
 
 As an aside, note that the last two graphs have roughly the same thick black mean frequency line, which hovers around $p = 0.5$. This highlights the dangers of looking at means alone. If we hadn't plotted the individual runs and relied solely on mean frequencies, we might think that $D = 0$ and $D = 1$ gave identical results. But in fact, they are very different. Always look at the underlying distribution that generates means.
 
 Now let's explore the effect of changing the initial frequencies by changing $p_0$, and adding conformity back in.
 
-```{r 4.10}
+```{r 4.10, fig.cap = "When trait A is always initially in the majority, it is always favoured by conformity"}
 data_model <- conformist_transmission(N = 1000, p_0 = 0.55, D = 1, t_max = 50, r_max = 10)
 plot_multiple_runs(data_model)
-
 ```
 
-When $A$ starts with a slight majority ($p_0 = 0.55$), all of the runs result in $A$ going to fixation (notice this partly depends on the random initialisation: you can change the number in `set.seed()` to see what happens. However, most if not all runs should result in $A$ going to fixation). Now let's try the reverse.
+When $A$ starts with a slight majority ($p_0 = 0.55$), all (or almost all) of the runs result in $A$ going to fixation. Now let's try the reverse.
 
-```{r 4.11}
+```{r 4.11, fig.cap = "When trait B is always initially in the majority, it is always favoured by conformity"}
 data_model <- conformist_transmission(N = 1000, p_0 = 0.45, D = 1, t_max = 50, r_max = 10)
 plot_multiple_runs(data_model)
 ```
@@ -321,11 +319,11 @@ This plot encapsulates the process of conformity. The dotted line shows unbiased
 
 ## Summary of the model
 
-In this chapter, we explored conformist biased cultural transmission. This is where individuals are disproportionately more likely to adopt the most common trait among a set of demonstrators. We can contrast this indirect bias with the direct (or content) biased transmission from [Chapter 3][Biased transmission (direct bias)], where one trait is intrinsically more likely to be copied. With conformity, the traits have no intrinsic attractiveness and are preferentially copied simply because they are common.
+In this chapter, we explored conformist biased cultural transmission. This is where individuals are disproportionately more likely to adopt the most common trait among a set of demonstrators. We can contrast this indirect bias with the direct (or content) biased transmission from [Chapter 3][Biased transmission (direct bias)], where one trait is intrinsically more likely to be copied. With conformity, the traits have no intrinsic difference in attractiveness and are preferentially copied simply because they are common.
 
 We saw how conformity increases the frequency of whichever trait is more common. Initial trait frequencies are important here: traits that are initially more common typically go to fixation. This, in turn, makes stochasticity important, which in small populations can affect initial frequencies.
 
-We also discussed the subtle but fundamental difference between unbiased copying and conformity. In both, majority traits are favoured, but it is only with conformity that they are *disproportionally* favoured. In large populations, unbiased transmission rarely leads to trait fixation, whereas conformist transmission often does. Furthermore, as we will see later, conformity also makes majority traits resistant to external disturbances, such as the introduction of other traits via innovation or migration. 
+We also discussed the subtle but fundamental difference between unbiased copying and conformity. In both, majority traits are favoured, but it is only with conformity that they are *disproportionately* favoured. In large populations, unbiased transmission rarely leads to trait fixation, whereas conformist transmission often does. Furthermore, as we will see later, conformity also makes majority traits resistant to external disturbances, such as the introduction of other traits via innovation or migration. 
 
 
 ## Further readings
