@@ -272,7 +272,6 @@ Let's add one final modification. So far the starting frequencies of $A$ and $B$
 
 To find out, we can add another parameter, $p_0$, which specifies the initial probability of an individual having an $A$ rather than a $B$ in the first generation. Previously this was always $p_0 = 0.5$, but in the new function below we add it to the `sample()` function to weight the initial allocation of traits in $t = 1$.
 
-<!-- see the comment above for the "as.numeric" -->
 ```{r 1.22}
 unbiased_transmission_3 <- function(N, p_0, t_max, r_max) {
   output <- tibble(generation = rep(1:t_max, r_max), p = as.numeric(rep(NA, t_max * r_max)), run = as.factor(rep(1:r_max, each = t_max)))
