@@ -237,7 +237,7 @@ We can use this property to make more complex plots. The plot created in `plot_m
 ```{r 1.18, eval=FALSE}
 ggplot(data = output) +
   geom_line(aes(y = p, x = generation, colour = run)) +
-  stat_summary(aes(y = p, x = generation), fun.y = mean, geom = "line", size = 1)
+  stat_summary(aes(y = p, x = generation), fun = mean, geom = "line", size = 1)
 ```
 
 is equivalent to the code we wrapped in the function above. However, the original code is clearer, as it distinguishes the global mapping, and the mappings specific to each visual representation. 
