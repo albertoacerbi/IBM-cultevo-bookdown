@@ -12,7 +12,7 @@ With $s_a=s_b$, copying is unbiased, and individuals switch to the encountered a
 
 Let's first write the function, and then explore what happens in this case. Below is a function `biased_transmission_direct()` that implements all of these ideas.
 
-```{r 3.1}
+```{r 3.1, message = FALSE}
 library(tidyverse)
 
 biased_transmission_direct <- function (N, s_a, s_b, p_0, t_max, r_max) {
@@ -36,12 +36,12 @@ biased_transmission_direct <- function (N, s_a, s_b, p_0, t_max, r_max) {
       copy_a <- sample(c(TRUE, FALSE), N, prob = c(s_a, 1 - s_a), replace = TRUE) 
       copy_b <- sample(c(TRUE, FALSE), N, prob = c(s_b, 1 - s_b), replace = TRUE) 
       
-      if (nrow(population[copy_a & demonstrator_trait == "A", ]) > 0) {
-        population[copy_a & demonstrator_trait == "A", ]$trait <- "A" 
+      if (nrow(population[copy_a & demonstrator_trait$trait == "A", ]) > 0) {
+        population[copy_a & demonstrator_trait$trait == "A", ]$trait <- "A" 
       }  
       
-      if (nrow(population[copy_b & demonstrator_trait == "B", ]) > 0) {
-        population[copy_b & demonstrator_trait == "B", ]$trait <- "B" 
+      if (nrow(population[copy_b & demonstrator_trait$trait == "B", ]) > 0) {
+        population[copy_b & demonstrator_trait$trait == "B", ]$trait <- "B" 
       }  
       output[output$generation == t & output$run == r, ]$p <- sum(population$trait == "A") / N # get p and put it into output slot for this generation t and run r
     }
