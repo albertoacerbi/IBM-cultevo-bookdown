@@ -40,7 +40,7 @@ Let's implement these assumptions in the kind of individual-based model we've be
 
 First, we'll specify our parameters, $N$ and $p_0$ as before, plus the new conformity parameter $D$. We also create the usual **population** tibble and fill it with $A$s and $B$s in the proportion specified by $p_0$, again exactly as before. 
 
-```{r 4.1}
+```{r 4.1, message = FALSE}
 library(tidyverse)
 
 N <- 100
