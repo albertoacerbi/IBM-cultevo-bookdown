@@ -80,7 +80,7 @@ Let us now write a function that can perform this loop repeatedly and average $\
 
 ```{r}
 demography_model <- function(R, N, alpha, beta, repeats){
-  res <- lapply(1:reps, function(REPS){
+  res <- lapply(1:repeats, function(REPS){
     z <- runif(n=N, min=0, max=1)
     zbar <- rep(NA, R)
     for(r in 1:R){
