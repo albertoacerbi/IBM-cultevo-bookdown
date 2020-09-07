@@ -1,12 +1,12 @@
 # (PART\*) Advanced topics - The evolution of cultural evolution {-} 
 
-# Rogers' Paradox
-
 The previous chapters all concerned cultural evolutionary dynamics: how different biases and transmission pathways affect the frequency of cultural traits in a population over time. Equally important, though, is to step back and consider where these biases and pathways came from in the first place. That is, we need to also consider the evolution of culture, and the evolution of cultural evolution.
 
 The most basic question we can ask here is why a capacity for social learning (learning from others) evolved, relative to individual learning (learning directly from the environment, on one's own). An intuitive answer to this question is that social learning is less costly than individual learning. Imagine trying out different foods, some of which may be poisonous. One could try each one, and see if they make you ill. A less risky strategy would be to observe one's neighbour, and eat what they are eating. Unless they look sickly all the time, this will likely lead to a palatable (and evolutionarily adaptive) choice. Consequently, social learning should increase the mean adaptation of a population.
 
 However, this intuition can be misleading. This was shown in 1988 by Alan Rogers in a now-classic model of the evolution of social learning (@rogers_does_1988). This model is often called "Rogers' paradox", because it shows that under certain conditions, social learning does not lead to increased adaptation, even when it is less costly than individual learning. More precisely, the mean fitness of a population containing social learners does not exceed the mean fitness of a population composed entirely of individual learners. Here we will recapitulate Rogers' mathematical model in an individual-based simulation, to see when and why this counter-intuitive result holds.
+
+# Rogers' Paradox
 
 In Rogers' model there are $N$ individuals. Each individual has a fixed learning strategy: they are either an individual learner, or a social learner. Each individual also exhibits a behaviour, which we will represent with an integer (e.g. '5', or '32'). There is also an environmental state, $E$, which is also represented with an integer. When an individual's behaviour matches the environment, they receive increased fitness, compared to when it does not match. A match might represent 'palatable food', while a mismatch might represent 'poisonous food'.
 
@@ -25,9 +25,7 @@ Finally, Rogers was interested in the effect of environmental change. Each gener
 This is a complex model but let's go step by step. First we create and initialise tibbles to store the output and the population of individuals, just like in previous chapters. The output here needs to be big enough to store data from $r_{max}$ runs and $t_{max}$ generations, like before. We then need to create NA placeholders for $p_{SL}$ (the proportion of social learners) and $W$ (the mean population fitness). The `population` dataframe stores the characteristics of the individuals: learning strategy ('individual' or 'social'), behaviour (initially all NA) and fitness (initially all NA). Finally, we initialise the environment $E$ at zero, which will subsequently increment.
 
 ```{r 8.1, message = FALSE}
-
 library(tidyverse)
-set.seed(111)
 
 N <- 100
 r_max <- 1
@@ -38,10 +36,10 @@ output <- tibble(generation = rep(1:t_max, r_max), run = as.factor(rep(1:r_max, 
 population <- tibble(learning = rep("individual", N), behaviour = rep(NA, N), fitness = rep(NA, N))
 
 E <- 0
-
 ```
 
 Now let's go through each event that happens during a single generation. Later we will put it all inside a loop. It's useful to write out the events that we need:
+
 1. Social learning
 2. Individual learning
 3. Calculate fitnesses
@@ -52,23 +50,19 @@ Now let's go through each event that happens during a single generation. Later w
 First, social learning. The following code picks random individuals from the previous population tibble (which we have yet to create, but will do later), to put into the social learner individuals in the current population tibble. This is similar to what we did in the first chapter. It only does this if there is at least one social learner. As noted above, we start in the first generation with all individual learners and no social learners, so this will not be fulfilled until the second generation. For now, nothing happens.
 
 ```{r 8.2}
-
 if (sum(population$learning == "social") > 0) {
   population$behaviour[population$learning == "social"] <- sample(previous_population$behaviour, sum(population$learning == "social"), replace = TRUE)
 }
-
 ```
 
 The following code implements individual learning. This *does* apply to the first generation. We first create a vector of TRUE and FALSE values dependent on $p$, the probability of individual learning resulting in a correct match with the environment. With this probability, individual learners have their behaviour set to the correct $E$ value. Otherwise, they are given the incorrect behaviour $E-1$. Note the use of the ! before `learn_correct` to give a match when this vector is FALSE (i.e. they do *not* learn the correct behaviour). Run this and check that the behaviour column of the population tibble changes.
 
 ```{r 8.3}
-
 p <- 0.8
 
 learn_correct <- sample(c(TRUE, FALSE), N, prob = c(p, 1 - p), replace = TRUE)
 population$behaviour[learn_correct & population$learning == "individual"] <- E
 population$behaviour[!learn_correct & population$learning == "individual"] <- E - 1
-
 ```
 
 Now we obtain the fitnesses for each individual. First we give everyone the baseline fitness, $w$. Then we add or subtract $b$, based on whether the individual has the correct or incorrect behaviour. Finally we impose costs, which are different for social and individual learners. Run this and check that the fitness column of the population tibble changes.

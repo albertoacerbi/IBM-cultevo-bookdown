@@ -7,9 +7,7 @@ Several subsequent models have explored 'solutions' to Rogers' paradox. These in
 To explore this assumption, @enquist_critical_2007 added another type of individual to Rogers' model: a critical social learner. These individuals first try social learning, and if the result is unsatisfactory, they then try individual learning. The following function modifies the rogers_model function from the last chapter to include critical learners. We need to change the code in a few places, as explained below the chunk. 
 
 ```{r 9.1, message = FALSE}
-
 library(tidyverse)
-set.seed(111)
 
 rogers_model2 <- function(N, t_max, r_max, w = 1, b = 0.5, c, s = 0, mu, p, u) {
   
