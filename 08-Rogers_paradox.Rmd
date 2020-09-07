@@ -245,31 +245,29 @@ data_model <- rogers_model(N = 1000, t_max = 500, r_max = 10, c = 0.9, mu = 0.01
 
 ```
 
-You can inspect the data_model tibble, but so much data is hard to make sense of. Let's write plotting functions like in previous chapters. First we can plot $p_{SL}$, the frequency of social learners. This is similar to the plots in previous chapters, but instead of plotting each run as a different colour, we plot them in grey, to show the range across runs as well as the mean.
+You can inspect the data_model `tibble`, but so much data is hard to make sense of. Let's write plotting functions like in previous chapters. First we can plot $p_{SL}$, the frequency of social learners. This is similar to the plots in previous chapters, but instead of plotting each run as a different colour, we plot them in grey, to show the range across runs as well as the mean.
 
-```{r 8.10}
-
+```{r 8.10, fig.cap="On average the proportion of social learners fluctuates around $0.5$ (black line). However, individual runs have a larger spread around this mean (overlapping runs in in grey)."}
 plot_p.SL <- function(data_model) {
   ggplot(data = data_model, aes(y = p.SL, x = generation)) +
     geom_line(col = "grey") +
-    stat_summary(fun.y = mean, geom = "line", size = 1) +
+    stat_summary(fun = mean, geom = "line", size = 1) +
     ylim(c(0, 1)) +
     theme_bw() +
     labs(y = "p.SL (proportion of social learners)")
 }
 
 plot_p.SL(data_model)
-
 ```
 
 Here we can see that, for these parameter values, the mean proportion of social learners fluctuates around 0.5. However, each run is quite erratic, with a large spread. More important for our understanding of Rogers' paradox, however, is the mean fitness of the population, and how this compares with a population entirely composed of individual learners. Consequently, we need to plot the mean population fitness over time. This is $W$ in the output of the rogers_model function. The function below plots this, along with a dotted line denoting the fitness of an individual learner, which by extension will be the same as the mean fitness of a population entirely composed of individual learners.
 
-```{r 8.11}
+```{r 8.11, fig.cap="Populations with roughly $50\%$ social learners have on average the same fitness (black line) as populations with only individual learners (dashed line). Even though populations with social learners sometimes exceed the average fitness of all-individual learner populations they also sometimes fall far below it (shaded area)."}
 
 plot_W <- function(data_model, w=1, b=0.5, c, p) {
   ggplot(data = data_model, aes(y = W, x = generation)) +
     geom_line(col = "grey") +
-    stat_summary(fun.y = mean, geom = "line", size = 1) +
+    stat_summary(fun = mean, geom = "line", size = 1) +
     geom_hline(yintercept = w + b*(2*p - c - 1), linetype = 2) +
     ylim(c(0, NA)) +
     theme_bw() +
@@ -280,30 +278,26 @@ plot_W(data_model, c = 0.9, p = 1)
 
 ```
 
-This is Rogers' paradox. Even though social learning is less costly than individual learning (i.e. $s < c$), our population of roughly 50% social learners never exceeds the dotted line that indicates the fitness of a population of individual learners. Social learning does not increase adaptation. This also runs counter to the common claim that culture - with social learning at its heart - has been a key driver of our species' ecological success.
+This is Rogers' paradox. Even though social learning is less costly than individual learning (i.e. $s < c$), our population of roughly $50\%$ social learners never exceeds the dotted line that indicates the fitness of a population of individual learners. Social learning does not increase adaptation. This also runs counter to the common claim that culture - with social learning at its heart - has been a key driver of our species' ecological success.
 
 The reason for this result is that social learning is frequency-dependent in a changing environment. Individual learners undergo costly individual learning and discover the correct behaviour, initially doing well. Social learners then copy that behaviour, but at lower cost. Social learners therefore then do better than, and outcompete, individual learners. But when the environment changes, the social learners do badly, because they are left copying outdated behaviour. Individual learners then do better, because they can detect the new environmental state. Individual learners increase in frequency, and the cycle continues. Eventually they reach an equilibrium at which the frequency of social and individual learners is the same. but by definition, this equilibrium must have the same mean fitness as a population entirely composed of individual learners. Hence, the 'paradox'.
 
 To explore this further, we can alter the parameters. First, we can reduce the cost of individual learning, from $c=0.9$ to $c=0.4$. 
 
-```{r 8.12}
-
+```{r 8.12, fig. cap="There are fewer social learners in a population where the cost of individaul learning is lower."}
 data_model <- rogers_model(N = 1000, t_max = 500, r_max = 10, c = 0.4, mu = 0.01, p = 1, u = 0.2)
 plot_p.SL(data_model)
 plot_W(data_model, c = 0.4, p = 1)
-
 ```
 
 As we might expect, this reduces the proportion of social learners, by giving individual learners less of a penalty for doing their individual learning. Also as expected, the paradox remains. In fact it is even more obvious, given that there are many more individual learners.
 
 We can also reduce the accuracy of individual learning, reducing $p$ from 1 to 0.8.
 
-```{r 8.13}
-
+```{r 8.13, fig.cap=""}
 data_model <- rogers_model(N = 1000, t_max = 500, r_max = 10, c = 0.9, mu = 0.01, p = 0.7, u = 0.2)
 plot_p.SL(data_model)
 plot_W(data_model, c = 0.9, p = 0.7)
-
 ```
 
 Now there are a majority of social learners. Yet the paradox remains: the mostly social learners still do not really exceed the pure individual learning fitness line.
