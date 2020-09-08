@@ -1,4 +1,5 @@
 # (PART\*) Advanced topics - The evolution of cultural evolution {-} 
+
 # Rogers' Paradox
 
 The previous chapters all concerned cultural evolutionary dynamics: how different biases and transmission pathways affect the frequency of cultural traits in a population over time. Equally important, though, is to step back and consider where these biases and pathways came from in the first place. That is, we need to also consider the evolution of culture, and the evolution of cultural evolution.
