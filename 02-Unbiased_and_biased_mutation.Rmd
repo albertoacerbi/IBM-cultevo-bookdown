@@ -16,40 +16,55 @@ We'll wrap this in a function called `unbiased_mutation()`, using much of the sa
 library(tidyverse)
 
 unbiased_mutation <- function(N, mu, p_0, t_max, r_max) {
-  output <- tibble(generation = rep(1:t_max, r_max), p = as.numeric(rep(NA, t_max * r_max)), run = as.factor(rep(1:r_max, each = t_max))) # create the output tibble
+  # Create the output tibble
+  output <- tibble(generation = rep(1:t_max, r_max), 
+                   p = as.numeric(rep(NA, t_max * r_max)), 
+                   run = as.factor(rep(1:r_max, each = t_max))) 
 
   for (r in 1:r_max) {
-    population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE, prob = c(p_0, 1 - p_0)))
-
-    output[output$generation == 1 & output$run == r, ]$p <- sum(population$trait == "A") / N # add first generation's p for run r
+    population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE, 
+                                        prob = c(p_0, 1 - p_0)))
+    # Add first generation's p for run r
+    output[output$generation == 1 & output$run == r, ]$p <- 
+      sum(population$trait == "A") / N 
     for (t in 2:t_max) {
-      previous_population <- population # copy individuals to previous_population tibble
-
-      mutate <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) # determine 'mutant' individuals
-
-      if (nrow(population[mutate & previous_population$trait == "A", ]) > 0) { # if there are 'mutants' from A to B
-        population[mutate & previous_population$trait == "A", ]$trait <- "B" # then flip them to B
+      # Copy individuals to previous_population tibble
+      previous_population <- population 
+      
+      # Determine 'mutant' individuals
+      mutate <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) 
+      
+      # If there are 'mutants' from A to B...
+      if (nrow(population[mutate & previous_population$trait == "A", ]) > 0) { 
+        # ....then flip them to B
+        population[mutate & previous_population$trait == "A", ]$trait <- "B" 
       }
-
-      if (nrow(population[mutate & previous_population$trait == "B", ]) > 0) { # if there are 'mutants' from B to A
-        population[mutate & previous_population$trait == "B", ]$trait <- "A" # then flip them to A
+      
+      # if there are 'mutants' from B to A...
+      if (nrow(population[mutate & previous_population$trait == "B", ]) > 0) { 
+        # ...then flip them to A
+        population[mutate & previous_population$trait == "B", ]$trait <- "A" 
       }
-      output[output$generation == t & output$run == r, ]$p <- sum(population$trait == "A") / N # get p and put it into output slot for this generation t and run r
+      
+      # Get p and put it into output slot for this generation t and run r
+      output[output$generation == t & output$run == r, ]$p <- 
+        sum(population$trait == "A") / N 
     }
   }
-  output # export data from function
+  # Export data from function
+  output 
 }
 ```
 
-The only changes from the previous model are the addition of $\mu$, the parameter that specifies the probability of mutation, in the function definition and new lines of code within the `for` loop on $t$ which replace the random copying command with unbiased mutation. Let's examine these lines to see how they work.
+The only changes from the previous model are the addition of `mu`, the parameter that specifies the probability of mutation, in the function definition and new lines of code within the `for` loop on `t` which replace the random copying command with unbiased mutation. Let's examine these lines to see how they work.
 
-The most obvious way of implementing unbiased mutation - which is *not* done above - would have been to set up another `for` loop. We would cycle through every individual one by one, each time calculating whether it should mutate or not based on $mu$. This would certainly work, but R is notoriously slow at loops. It's always preferable in R, where possible, to use 'vectorised' code. That's what is done above in our three added lines, starting from `mutate <- sample()`. 
+The most obvious way of implementing unbiased mutation - which is *not* done above - would have been to set up another `for` loop. We would cycle through every individual one by one, each time calculating whether it should mutate or not based on `mu`. This would certainly work, but R is notoriously slow at loops. It's always preferable in R, where possible, to use 'vectorised' code. That's what is done above in our three added lines, starting from `mutate <- sample()`. 
 
-First, we pre-specify the probability of mutating for each individual. For this, we again use the function `sample()`, picking $TRUE$ (corresponding to being a mutant) or $FALSE$ (not mutating, i.e. keeping the same cultural trait) for $N$ times. The draw, however, is not random: the probability of drawing $TRUE$ is equal to $\mu$, and the probability of drawing $FALSE$ is $1-\mu$. You can think about the procedure in this way: each individual in the population flips a biased coin that has $\mu$ probability to land on, say, heads, and $1-\mu$ to land on tails. If it lands on heads they change their cultural trait.
+First, we pre-specify the probability of mutating for each individual. For this, we again use the function `sample()`, picking `TRUE` (corresponding to being a mutant) or `FALSE` (not mutating, i.e. keeping the same cultural trait) for $N$ times. The draw, however, is not random: the probability of drawing `TRUE` is equal to $\mu$, and the probability of drawing `FALSE` is $1-\mu$. You can think about the procedure in this way: each individual in the population flips a biased coin that has $\mu$ probability to land on, say, heads, and $1-\mu$ to land on tails. If it lands on heads they change their cultural trait.
 
 In the subsequent lines we change the traits for the 'mutant' individuals. We need to check whether there are individuals that change their trait, both from $A$ to $B$ and vice versa, using the two `if` conditionals. If there are no such individuals, then assigning a new value to an empty tibble returns an error. To avoid this, we make sure that the number of rows is greater than 0 (using `nrow()>0` within the `if`). 
 
-To plot the results, we can use the same function `plot_multiple_runs()` we wrote in the [previous chapter][Unbiased transmission], reproduced here for convenience.
+To plot the results, we can use the same function `plot_multiple_runs()` we wrote in the [previous chapter][Unbiased transmission].
 
 ```{r 2.2, echo=FALSE}
 plot_multiple_runs <- function(data_model) {
@@ -84,6 +99,7 @@ plot_multiple_runs(data_model)
 
 You should see $p$ go from 0.1 up to 0.5. In fact, whatever the initial starting frequencies of $A$ and $B$, unbiased mutation always leads to $p = 0.5$, for the reason explained above: unbiased mutation always tends to balance the proportion of $A$s and $B$s.
 
+<!-- TO DO FROM HERE -->
 
 ## Biased mutation
 
@@ -93,12 +109,17 @@ The function `biased_mutation()` captures this unidirectional mutation.
 
 ```{r 2.5}
 biased_mutation <- function(N, mu_b, p_0, t_max, r_max) {
-  output <- tibble(generation = rep(1:t_max, r_max), p = as.numeric(rep(NA, t_max * r_max)), run = as.factor(rep(1:r_max, each = t_max))) # create the output tibble
+   # Create the output tibble
+  output <- tibble(generation = rep(1:t_max, r_max), 
+                   p = as.numeric(rep(NA, t_max * r_max)), 
+                   run = as.factor(rep(1:r_max, each = t_max)))
 
   for (r in 1:r_max) {
-    population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE, prob = c(p_0, 1 - p_0)))
-
-    output[output$generation == 1 & output$run == r, ]$p <- sum(population$trait == "A") / N # add first generation's p for run r
+    population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE, 
+                                        prob = c(p_0, 1 - p_0)))
+    # Add first generation's p for run r
+    output[output$generation == 1 & output$run == r, ]$p <- 
+      sum(population$trait == "A") / N 
     for (t in 2:t_max) {
       previous_population <- population # copy individuals to previous_population tibble
 

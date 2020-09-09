@@ -292,21 +292,21 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <pre><code>## # A tibble: 100 x 1
 ##    trait
 ##    &lt;chr&gt;
-##  1 B    
-##  2 B    
+##  1 A    
+##  2 A    
 ##  3 B    
-##  4 B    
-##  5 A    
+##  4 A    
+##  5 B    
 ##  6 B    
-##  7 B    
+##  7 A    
 ##  8 B    
-##  9 A    
-## 10 A    
+##  9 B    
+## 10 B    
 ## # … with 90 more rows</code></pre>
-<p>As expected, there is a single column called <code>trait</code> containing <span class="math inline">\(A\)</span>s and <span class="math inline">\(B\)</span>s. The type of the column, in this case <code>&lt;chr&gt;</code> (i.e. character), is reported below the name.</p>
+<p>As expected, there is a single column called <code>trait</code> containing <span class="math inline">\(A\)</span>s and <span class="math inline">\(B\)</span>s. The type of the column, in this case ‘<chr>’ (i.e. character), is reported below the name.</p>
 <p>A specific individual’s trait can be retrieved using the square bracket notation in R. For example, individual 4’s trait can be retrieved by typing:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="unbiased-transmission.html#cb5-1"></a>population<span class="op">$</span>trait[<span class="dv">4</span>]</span></code></pre></div>
-<pre><code>## [1] &quot;B&quot;</code></pre>
+<pre><code>## [1] &quot;A&quot;</code></pre>
 <p>This should match the fourth row in the table above.</p>
 <p>We also need a tibble to record the output of our simulation, that is, to track the trait frequency <span class="math inline">\(p\)</span> in each generation. This will have two columns with <span class="math inline">\(t_{\text{max}}\)</span> rows, one row for each generation. The first column is simply a counter of the generations, from 1 to <span class="math inline">\(t_{\text{max}}\)</span>. This will be useful for plotting the output later. The other column should contain the values of <span class="math inline">\(p\)</span> for each generation.</p>
 <p>At this stage we don’t know what <span class="math inline">\(p\)</span> will be in each generation, so for now let’s fill the <code>output</code> tibble with lots of NAs, which is R’s symbol for Not Available, or missing value. We can use the <code>rep()</code> (repeat) command to repeat NA <span class="math inline">\(t_{\text{max}}\)</span> times. We’re using NA rather than, say, zero, because zero could be misinterpreted as <span class="math inline">\(p = 0\)</span>, which would mean that all individuals have trait <span class="math inline">\(B\)</span>. This would be misleading, because at the moment we haven’t yet calculated <span class="math inline">\(p\)</span>, so it’s nonexistent, rather than zero.</p>
@@ -317,7 +317,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <pre><code>## # A tibble: 200 x 2
 ##    generation     p
 ##         &lt;int&gt; &lt;dbl&gt;
-##  1          1  0.55
+##  1          1  0.47
 ##  2          2 NA   
 ##  3          3 NA   
 ##  4          4 NA   
@@ -340,13 +340,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </ul>
 <p>To iterate, we’ll use a for-loop, using <code>t</code> to track the generation. We’ve already done generation 1 so we’ll start at generation 2. The random picking of models is done with <code>sample()</code> again, but this time picking from the traits held in <code>previous_population</code>. Note that we have added comments briefly explaining what each line does. This is perhaps superfluous when the code is this simple, but it’s always good practice. Code often gets cut-and-pasted into other places and loses its context. Explaining what each line does lets other people - and a future, forgetful you - know what’s going on.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="unbiased-transmission.html#cb10-1"></a><span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span>t_max) {</span>
-<span id="cb10-2"><a href="unbiased-transmission.html#cb10-2"></a>  <span class="co"># copy the population tibble to previous_population tibble:</span></span>
+<span id="cb10-2"><a href="unbiased-transmission.html#cb10-2"></a>  <span class="co"># Copy the population tibble to previous_population tibble</span></span>
 <span id="cb10-3"><a href="unbiased-transmission.html#cb10-3"></a>  previous_population &lt;-<span class="st"> </span>population </span>
 <span id="cb10-4"><a href="unbiased-transmission.html#cb10-4"></a>  </span>
-<span id="cb10-5"><a href="unbiased-transmission.html#cb10-5"></a>  <span class="co"># randomly copy from previous generation&#39;s individuals:</span></span>
+<span id="cb10-5"><a href="unbiased-transmission.html#cb10-5"></a>  <span class="co"># Randomly copy from previous generation&#39;s individuals</span></span>
 <span id="cb10-6"><a href="unbiased-transmission.html#cb10-6"></a>  population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(previous_population<span class="op">$</span>trait, N, <span class="dt">replace =</span> <span class="ot">TRUE</span>)) </span>
 <span id="cb10-7"><a href="unbiased-transmission.html#cb10-7"></a>  </span>
-<span id="cb10-8"><a href="unbiased-transmission.html#cb10-8"></a>  <span class="co"># get p and put it into the output slot for this generation t:</span></span>
+<span id="cb10-8"><a href="unbiased-transmission.html#cb10-8"></a>  <span class="co"># Get p and put it into the output slot for this generation t</span></span>
 <span id="cb10-9"><a href="unbiased-transmission.html#cb10-9"></a>  output<span class="op">$</span>p[t] &lt;-<span class="st"> </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N </span>
 <span id="cb10-10"><a href="unbiased-transmission.html#cb10-10"></a>}</span></code></pre></div>
 <p>Now we should have 200 values of <code>p</code> stored in <code>output</code>, one for each generation. You can list them by typing <code>output</code>, but more effective is to plot them.</p>
@@ -381,17 +381,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb12-6"><a href="unbiased-transmission.html#cb12-6"></a>  output<span class="op">$</span>p[<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N</span>
 <span id="cb12-7"><a href="unbiased-transmission.html#cb12-7"></a></span>
 <span id="cb12-8"><a href="unbiased-transmission.html#cb12-8"></a>  <span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span>t_max) {</span>
-<span id="cb12-9"><a href="unbiased-transmission.html#cb12-9"></a>    <span class="co"># copy individuals to previous_population tibble:</span></span>
+<span id="cb12-9"><a href="unbiased-transmission.html#cb12-9"></a>    <span class="co"># Copy individuals to previous_population tibble</span></span>
 <span id="cb12-10"><a href="unbiased-transmission.html#cb12-10"></a>    previous_population &lt;-<span class="st"> </span>population </span>
 <span id="cb12-11"><a href="unbiased-transmission.html#cb12-11"></a>    </span>
-<span id="cb12-12"><a href="unbiased-transmission.html#cb12-12"></a>    <span class="co"># randomly copy from previous generation</span></span>
+<span id="cb12-12"><a href="unbiased-transmission.html#cb12-12"></a>    <span class="co"># Randomly copy from previous generation</span></span>
 <span id="cb12-13"><a href="unbiased-transmission.html#cb12-13"></a>    population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(previous_population<span class="op">$</span>trait, N, <span class="dt">replace =</span> <span class="ot">TRUE</span>))</span>
 <span id="cb12-14"><a href="unbiased-transmission.html#cb12-14"></a>    </span>
-<span id="cb12-15"><a href="unbiased-transmission.html#cb12-15"></a>    <span class="co"># get p and put it into output slot for this generation t</span></span>
+<span id="cb12-15"><a href="unbiased-transmission.html#cb12-15"></a>    <span class="co"># Get p and put it into output slot for this generation t</span></span>
 <span id="cb12-16"><a href="unbiased-transmission.html#cb12-16"></a>    output<span class="op">$</span>p[t] &lt;-<span class="st"> </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N </span>
 <span id="cb12-17"><a href="unbiased-transmission.html#cb12-17"></a>  }</span>
-<span id="cb12-18"><a href="unbiased-transmission.html#cb12-18"></a>  output</span>
-<span id="cb12-19"><a href="unbiased-transmission.html#cb12-19"></a>}</span></code></pre></div>
+<span id="cb12-18"><a href="unbiased-transmission.html#cb12-18"></a>  <span class="co"># Export data from function</span></span>
+<span id="cb12-19"><a href="unbiased-transmission.html#cb12-19"></a>  output</span>
+<span id="cb12-20"><a href="unbiased-transmission.html#cb12-20"></a>}</span></code></pre></div>
 <p>This is just all of the code snippets that we already ran above, but all within a function with parameters <span class="math inline">\(N\)</span> and <span class="math inline">\(t_{\text{max}}\)</span> as arguments to the function. In addition, <code>unbiased_transmission_1()</code> ends with the line <code>output</code>. This means that this tibble will be exported from the function when it is run. This is useful for storing data from simulations wrapped in functions, otherwise that data is lost after the function is executed.</p>
 <p>Nothing will happen when you run the above code, because all you have done is define the function and not actually run it. The point is that we can now call the function in one go, easily changing the values of <span class="math inline">\(N\)</span> and <span class="math inline">\(t_{\text{max}}\)</span>. Let’s try first with the same values of <span class="math inline">\(N\)</span> and <span class="math inline">\(t_{\text{max}}\)</span> as before, and save the output from the simulation into <code>data_model</code>, as a record of what happened.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="unbiased-transmission.html#cb13-1"></a>data_model &lt;-<span class="st"> </span><span class="kw">unbiased_transmission_1</span>(<span class="dt">N =</span> <span class="dv">100</span>, <span class="dt">t_max =</span> <span class="dv">200</span>)</span></code></pre></div>
@@ -428,28 +429,37 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Wrapping a simulation in a function like this is good because we can easily re-run it with just a single command. However, it’s a bit laborious to manually re-run it. Say we wanted to re-run the simulation 10 times with the same parameter values to see how many times <span class="math inline">\(A\)</span> goes to fixation, and how many times <span class="math inline">\(B\)</span> goes to fixation. Currently, we’d have to manually run the <code>unbiased_transmission_1()</code> function 10 times and record somewhere else what happened in each run. It would be better to automatically re-run the simulation several times and plot each run as a separate line on the same plot. We could also add a line showing the mean value of <span class="math inline">\(p\)</span> across all runs.</p>
 <p>Let’s use a new parameter <span class="math inline">\(r_{\text{max}}\)</span> to specify the number of independent runs, and use another for-loop to cycle over the <span class="math inline">\(r_{\text{max}}\)</span> runs. Let’s rewrite the <code>unbiased_transmission_1()</code> function to handle multiple runs. We will call the new function <code>unbiased_transmission_2()</code>.</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="unbiased-transmission.html#cb17-1"></a>unbiased_transmission_<span class="dv">2</span> &lt;-<span class="st"> </span><span class="cf">function</span>(N, t_max, r_max) {</span>
-<span id="cb17-2"><a href="unbiased-transmission.html#cb17-2"></a>  output &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">generation =</span> <span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span>t_max, r_max), <span class="dt">p =</span> <span class="kw">as.numeric</span>(<span class="kw">rep</span>(<span class="ot">NA</span>, t_max <span class="op">*</span><span class="st"> </span>r_max)), <span class="dt">run =</span> <span class="kw">as.factor</span>(<span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span>r_max, <span class="dt">each =</span> t_max))) <span class="co"># create the output tibble</span></span>
-<span id="cb17-3"><a href="unbiased-transmission.html#cb17-3"></a></span>
-<span id="cb17-4"><a href="unbiased-transmission.html#cb17-4"></a>  <span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>r_max) { <span class="co"># for each run</span></span>
-<span id="cb17-5"><a href="unbiased-transmission.html#cb17-5"></a>    population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(<span class="kw">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>), N, <span class="dt">replace =</span> <span class="ot">TRUE</span>))</span>
-<span id="cb17-6"><a href="unbiased-transmission.html#cb17-6"></a>    <span class="co"># create first generation</span></span>
-<span id="cb17-7"><a href="unbiased-transmission.html#cb17-7"></a></span>
-<span id="cb17-8"><a href="unbiased-transmission.html#cb17-8"></a>    output[output<span class="op">$</span>generation <span class="op">==</span><span class="st"> </span><span class="dv">1</span> <span class="op">&amp;</span><span class="st"> </span>output<span class="op">$</span>run <span class="op">==</span><span class="st"> </span>r, ]<span class="op">$</span>p &lt;-<span class="st"> </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N <span class="co"># add first generation&#39;s p for run r</span></span>
-<span id="cb17-9"><a href="unbiased-transmission.html#cb17-9"></a></span>
-<span id="cb17-10"><a href="unbiased-transmission.html#cb17-10"></a>    <span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span>t_max) {</span>
-<span id="cb17-11"><a href="unbiased-transmission.html#cb17-11"></a>      previous_population &lt;-<span class="st"> </span>population <span class="co"># copy individuals to previous_population tibble</span></span>
-<span id="cb17-12"><a href="unbiased-transmission.html#cb17-12"></a></span>
-<span id="cb17-13"><a href="unbiased-transmission.html#cb17-13"></a>      population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(previous_population<span class="op">$</span>trait, N, <span class="dt">replace =</span> <span class="ot">TRUE</span>))</span>
-<span id="cb17-14"><a href="unbiased-transmission.html#cb17-14"></a>      <span class="co"># randomly copy from previous generation</span></span>
-<span id="cb17-15"><a href="unbiased-transmission.html#cb17-15"></a></span>
-<span id="cb17-16"><a href="unbiased-transmission.html#cb17-16"></a>      output[output<span class="op">$</span>generation <span class="op">==</span><span class="st"> </span>t <span class="op">&amp;</span><span class="st"> </span>output<span class="op">$</span>run <span class="op">==</span><span class="st"> </span>r, ]<span class="op">$</span>p &lt;-<span class="st"> </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N <span class="co"># get p and put it into output slot for this generation t and run r</span></span>
-<span id="cb17-17"><a href="unbiased-transmission.html#cb17-17"></a>    }</span>
-<span id="cb17-18"><a href="unbiased-transmission.html#cb17-18"></a>  }</span>
-<span id="cb17-19"><a href="unbiased-transmission.html#cb17-19"></a>  output <span class="co"># export data from function</span></span>
-<span id="cb17-20"><a href="unbiased-transmission.html#cb17-20"></a>}</span></code></pre></div>
-<p>There are a few changes here. First, we need a different <strong>output</strong> tibble, because we need to store data for all the runs. For that, we initialise the same <span class="math inline">\(generation\)</span> and <span class="math inline">\(p\)</span> columns as before, but with space for all the runs. <span class="math inline">\(generation\)</span> is now built by repeating the count of each generation <span class="math inline">\(r_{\text{max}}\)</span> times, and <span class="math inline">\(p\)</span> is NA repeated for all generations, for all runs.</p>
-<p>We also need a new column called <span class="math inline">\(run\)</span> that keeps track of which run the data in the other two columns belongs to. Note that the definition of <span class="math inline">\(run\)</span> is preceded by <code>as.factor()</code>. This specifies the type of data to put in the <span class="math inline">\(run\)</span> column. We want <span class="math inline">\(run\)</span> to be a ‘factor’ or categorical variable so that, even if runs are labelled with numbers (1, 2, 3…), this should not be misinterpreted as a continuous, real number: there is no sense in which run 2 is twice as ‘runny’ as run 1, or run 3 half as ‘runny’ as run 6. Runs could equally have been labelled using letters, or any other arbitrary scheme. While omitting <code>as.factor()</code> does not make any difference when running the simulation, it would create problems when plotting the data because ggplot would treat runs as continuous real numbers rather than discrete categories (you can see this yourself by modifying the definition of <strong>output</strong> in the previous code chunk). This is a good example of how it is important to have a clear understanding of your data before trying to plot or analyse them.</p>
-<p>Going back to the function, we then set up an <span class="math inline">\(r\)</span> loop, which executes once for each run. The code within this loop is mostly the same as before, except that we now use the <code>[output$generation == t &amp; output$run == r, ]</code> notation to put <span class="math inline">\(p\)</span> into the right place in <strong>output</strong>.</p>
+<span id="cb17-2"><a href="unbiased-transmission.html#cb17-2"></a>  output &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">generation =</span> <span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span>t_max, r_max), </span>
+<span id="cb17-3"><a href="unbiased-transmission.html#cb17-3"></a>                   <span class="dt">p =</span> <span class="kw">as.numeric</span>(<span class="kw">rep</span>(<span class="ot">NA</span>, t_max <span class="op">*</span><span class="st"> </span>r_max)), </span>
+<span id="cb17-4"><a href="unbiased-transmission.html#cb17-4"></a>                   <span class="dt">run =</span> <span class="kw">as.factor</span>(<span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span>r_max, <span class="dt">each =</span> t_max))) </span>
+<span id="cb17-5"><a href="unbiased-transmission.html#cb17-5"></a>  <span class="co"># For each run</span></span>
+<span id="cb17-6"><a href="unbiased-transmission.html#cb17-6"></a>  <span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>r_max) { </span>
+<span id="cb17-7"><a href="unbiased-transmission.html#cb17-7"></a>    <span class="co"># Create first generation</span></span>
+<span id="cb17-8"><a href="unbiased-transmission.html#cb17-8"></a>    population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(<span class="kw">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>), N, <span class="dt">replace =</span> <span class="ot">TRUE</span>))</span>
+<span id="cb17-9"><a href="unbiased-transmission.html#cb17-9"></a>    </span>
+<span id="cb17-10"><a href="unbiased-transmission.html#cb17-10"></a>    <span class="co"># Add first generation&#39;s p for run r</span></span>
+<span id="cb17-11"><a href="unbiased-transmission.html#cb17-11"></a>    output[output<span class="op">$</span>generation <span class="op">==</span><span class="st"> </span><span class="dv">1</span> <span class="op">&amp;</span><span class="st"> </span>output<span class="op">$</span>run <span class="op">==</span><span class="st"> </span>r, ]<span class="op">$</span>p &lt;-</span>
+<span id="cb17-12"><a href="unbiased-transmission.html#cb17-12"></a><span class="st">      </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N </span>
+<span id="cb17-13"><a href="unbiased-transmission.html#cb17-13"></a>    </span>
+<span id="cb17-14"><a href="unbiased-transmission.html#cb17-14"></a>    <span class="co"># For each generation</span></span>
+<span id="cb17-15"><a href="unbiased-transmission.html#cb17-15"></a>    <span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span>t_max) {</span>
+<span id="cb17-16"><a href="unbiased-transmission.html#cb17-16"></a>      <span class="co"># Copy individuals to previous_population tibble</span></span>
+<span id="cb17-17"><a href="unbiased-transmission.html#cb17-17"></a>      previous_population &lt;-<span class="st"> </span>population </span>
+<span id="cb17-18"><a href="unbiased-transmission.html#cb17-18"></a>      </span>
+<span id="cb17-19"><a href="unbiased-transmission.html#cb17-19"></a>      <span class="co"># Randomly copy from previous generation</span></span>
+<span id="cb17-20"><a href="unbiased-transmission.html#cb17-20"></a>      population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(previous_population<span class="op">$</span>trait, N, <span class="dt">replace =</span> <span class="ot">TRUE</span>))</span>
+<span id="cb17-21"><a href="unbiased-transmission.html#cb17-21"></a>      </span>
+<span id="cb17-22"><a href="unbiased-transmission.html#cb17-22"></a>      <span class="co"># Get p and put it into output slot for this generation t and run r</span></span>
+<span id="cb17-23"><a href="unbiased-transmission.html#cb17-23"></a>      output[output<span class="op">$</span>generation <span class="op">==</span><span class="st"> </span>t <span class="op">&amp;</span><span class="st"> </span>output<span class="op">$</span>run <span class="op">==</span><span class="st"> </span>r, ]<span class="op">$</span>p &lt;-<span class="st"> </span></span>
+<span id="cb17-24"><a href="unbiased-transmission.html#cb17-24"></a><span class="st">        </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N </span>
+<span id="cb17-25"><a href="unbiased-transmission.html#cb17-25"></a>    }</span>
+<span id="cb17-26"><a href="unbiased-transmission.html#cb17-26"></a>  }</span>
+<span id="cb17-27"><a href="unbiased-transmission.html#cb17-27"></a>  <span class="co"># Export data from function</span></span>
+<span id="cb17-28"><a href="unbiased-transmission.html#cb17-28"></a>  output </span>
+<span id="cb17-29"><a href="unbiased-transmission.html#cb17-29"></a>}</span></code></pre></div>
+<p>There are a few changes here. First, we need a different <code>output</code> tibble, because we need to store data for all the runs. For that, we initialise the same <code>generation</code> and <code>p</code> columns as before, but with space for all the runs. <code>generation</code> is now built by repeating the count of each generation <span class="math inline">\(r_{\text{max}}\)</span> times, and <code>p</code> is NA repeated for all generations, for all runs.</p>
+<p>We also need a new column called <code>run</code> that keeps track of which run the data in the other two columns belongs to. Note that the definition of <code>run</code> is preceded by <code>as.factor()</code>. This specifies the type of data to put in the <code>run</code> column. We want <code>run</code> to be a ‘factor’ or categorical variable so that, even if runs are labelled with numbers (1, 2, 3…), this should not be misinterpreted as a continuous, real number: there is no sense in which run 2 is twice as ‘runny’ as run 1, or run 3 half as ‘runny’ as run 6. Runs could equally have been labelled using letters, or any other arbitrary scheme. While omitting <code>as.factor()</code> does not make any difference when running the simulation, it would create problems when plotting the data because ggplot would treat runs as continuous real numbers rather than discrete categories (you can see this yourself by modifying the definition of <code>output</code> in the previous code chunk). This is a good example of how it is important to have a clear understanding of your data before trying to plot or analyse them.</p>
+<p>Going back to the function, we then set up a loop which executes once for each run. The code within this loop is mostly the same as before, except that we now use the <code>[output$generation == t &amp; output$run == r, ]</code> notation to put <span class="math inline">\(p\)</span> into the right place in <code>output</code>.</p>
 <p>The plotting function is also changed to handle multiple runs:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="unbiased-transmission.html#cb18-1"></a>plot_multiple_runs &lt;-<span class="st"> </span><span class="cf">function</span>(data_model) {</span>
 <span id="cb18-2"><a href="unbiased-transmission.html#cb18-2"></a>  <span class="kw">ggplot</span>(<span class="dt">data =</span> data_model, <span class="kw">aes</span>(<span class="dt">y =</span> p, <span class="dt">x =</span> generation)) <span class="op">+</span></span>
@@ -465,7 +475,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>is equivalent to this:</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="unbiased-transmission.html#cb20-1"></a><span class="kw">ggplot</span>(<span class="dt">data =</span> output) <span class="op">+</span></span>
 <span id="cb20-2"><a href="unbiased-transmission.html#cb20-2"></a><span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">y =</span> p, <span class="dt">x =</span> generation))</span></code></pre></div>
-<p>We can use this property to make more complex plots. The plot created in <code>plot_multiple_runs</code> has a first geom, <code>geom_line()</code>. This inherits the aesthetics specified in the initial call to <code>ggplot()</code> but also has a new mapping specific to <code>geom_line()</code>, <code>colour = run</code>. This tells ggplot to plot each run line with a different colour. The next command, <code>stat_summary()</code>, calculates the mean of all runs. However, this only inherits the mapping specified in the initial <code>ggplot()</code> call. If in the aesthetic of <code>stat_summary()</code> we had also specified <code>colour = run</code>, it would separate the data by run, and it would calculate the mean of each run. This, though, is just the lines we have already plotted with the <code>geom_line()</code> command. For this reason, we did not put <code>colour = run</code> in the <code>ggplot()</code> call, only in <code>geom_line()</code>. As always, there are various ways to obtain the same result. This code:</p>
+<p>We can use this property to make more complex plots. The plot created in <code>plot_multiple_runs()</code> has a first geom, <code>geom_line()</code>. This inherits the aesthetics specified in the initial call to <code>ggplot()</code> but also has a new mapping specific to <code>geom_line()</code>, <code>colour = run</code>. This tells ggplot to plot each run line with a different colour. The next command, <code>stat_summary()</code>, calculates the mean of all runs. However, this only inherits the mapping specified in the initial <code>ggplot()</code> call. If in the aesthetic of <code>stat_summary()</code> we had also specified <code>colour = run</code>, it would separate the data by run, and it would calculate the mean of each run. This, though, is just the lines we have already plotted with the <code>geom_line()</code> command. For this reason, we did not put <code>colour = run</code> in the <code>ggplot()</code> call, only in <code>geom_line()</code>. As always, there are various ways to obtain the same result. This code:</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="unbiased-transmission.html#cb21-1"></a><span class="kw">ggplot</span>(<span class="dt">data =</span> output) <span class="op">+</span></span>
 <span id="cb21-2"><a href="unbiased-transmission.html#cb21-2"></a><span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">y =</span> p, <span class="dt">x =</span> generation, <span class="dt">colour =</span> run)) <span class="op">+</span></span>
 <span id="cb21-3"><a href="unbiased-transmission.html#cb21-3"></a><span class="st">  </span><span class="kw">stat_summary</span>(<span class="kw">aes</span>(<span class="dt">y =</span> p, <span class="dt">x =</span> generation), <span class="dt">fun =</span> mean, <span class="dt">geom =</span> <span class="st">&quot;line&quot;</span>, <span class="dt">size =</span> <span class="dv">1</span>)</span></code></pre></div>
@@ -480,21 +490,21 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 (#fig:1.19)Unbiased cultural transmission generates different dynamics in multiple runs
 </p>
 </div>
-<p>You should be able to see five independent runs of our simulation shown as regular thin lines, along with a thicker line showing the mean of these lines. Some runs have probably gone to 0 or 1, and the mean should be somewhere in between. The data is stored in <strong>data_model</strong>, which we can inspect by writing its name.</p>
+<p>You should be able to see five independent runs of our simulation shown as regular thin lines, along with a thicker line showing the mean of these lines. Some runs have probably gone to 0 or 1, and the mean should be somewhere in between. The data is stored in <code>data_model</code>, which we can inspect by writing its name.</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="unbiased-transmission.html#cb23-1"></a>data_model</span></code></pre></div>
 <pre><code>## # A tibble: 1,000 x 3
 ##    generation     p run  
 ##         &lt;int&gt; &lt;dbl&gt; &lt;fct&gt;
-##  1          1 0.54  1    
-##  2          2 0.48  1    
-##  3          3 0.51  1    
-##  4          4 0.580 1    
-##  5          5 0.6   1    
-##  6          6 0.6   1    
-##  7          7 0.6   1    
-##  8          8 0.570 1    
-##  9          9 0.61  1    
-## 10         10 0.53  1    
+##  1          1  0.39 1    
+##  2          2  0.44 1    
+##  3          3  0.44 1    
+##  4          4  0.41 1    
+##  5          5  0.39 1    
+##  6          6  0.36 1    
+##  7          7  0.43 1    
+##  8          8  0.38 1    
+##  9          9  0.32 1    
+## 10         10  0.36 1    
 ## # … with 990 more rows</code></pre>
 <p>Now let’s run the <code>unbiased_transmission_2()</code> model with <span class="math inline">\(N = 10000\)</span>, to compare with <span class="math inline">\(N = 100\)</span>.</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="unbiased-transmission.html#cb25-1"></a>data_model &lt;-<span class="st"> </span><span class="kw">unbiased_transmission_2</span>(<span class="dt">N =</span> <span class="dv">10000</span>, <span class="dt">t_max =</span> <span class="dv">200</span>, <span class="dt">r_max =</span> <span class="dv">5</span>)</span>
@@ -510,27 +520,36 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="varying-initial-conditions" class="section level2">
 <h2><span class="header-section-number">1.6</span> Varying initial conditions</h2>
 <p>Let’s add one final modification. So far the starting frequencies of <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> have been the same, roughly 0.5 each. But what if we were to start at different initial frequencies of <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span>? Say, <span class="math inline">\(p = 0.2\)</span> or <span class="math inline">\(p = 0.9\)</span>? Would unbiased transmission keep <span class="math inline">\(p\)</span> at these initial values, or would it go to <span class="math inline">\(p = 0.5\)</span> as we have found so far?</p>
-<p>To find out, we can add another parameter, <span class="math inline">\(p_0\)</span>, which specifies the initial probability of an individual having an <span class="math inline">\(A\)</span> rather than a <span class="math inline">\(B\)</span> in the first generation. Previously this was always <span class="math inline">\(p_0 = 0.5\)</span>, but in the new function below we add it to the <code>sample()</code> function to weight the initial allocation of traits in <span class="math inline">\(t = 1\)</span>.</p>
+<p>To find out, we can add another parameter, <code>p_0</code>, which specifies the initial probability of an individual having an <span class="math inline">\(A\)</span> rather than a <span class="math inline">\(B\)</span> in the first generation. Previously this was always <code>p_0 = 0.5</code>, but in the new function below we add it to the <code>sample()</code> function to weight the initial allocation of traits.</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="unbiased-transmission.html#cb26-1"></a>unbiased_transmission_<span class="dv">3</span> &lt;-<span class="st"> </span><span class="cf">function</span>(N, p_<span class="dv">0</span>, t_max, r_max) {</span>
-<span id="cb26-2"><a href="unbiased-transmission.html#cb26-2"></a>  output &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">generation =</span> <span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span>t_max, r_max), <span class="dt">p =</span> <span class="kw">as.numeric</span>(<span class="kw">rep</span>(<span class="ot">NA</span>, t_max <span class="op">*</span><span class="st"> </span>r_max)), <span class="dt">run =</span> <span class="kw">as.factor</span>(<span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span>r_max, <span class="dt">each =</span> t_max)))</span>
-<span id="cb26-3"><a href="unbiased-transmission.html#cb26-3"></a></span>
-<span id="cb26-4"><a href="unbiased-transmission.html#cb26-4"></a>  <span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>r_max) {</span>
-<span id="cb26-5"><a href="unbiased-transmission.html#cb26-5"></a>    population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(<span class="kw">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>), N, <span class="dt">replace =</span> <span class="ot">TRUE</span>, <span class="dt">prob =</span> <span class="kw">c</span>(p_<span class="dv">0</span>, <span class="dv">1</span> <span class="op">-</span><span class="st"> </span>p_<span class="dv">0</span>)))</span>
-<span id="cb26-6"><a href="unbiased-transmission.html#cb26-6"></a>    <span class="co"># create first generation</span></span>
-<span id="cb26-7"><a href="unbiased-transmission.html#cb26-7"></a></span>
-<span id="cb26-8"><a href="unbiased-transmission.html#cb26-8"></a>    output[output<span class="op">$</span>generation <span class="op">==</span><span class="st"> </span><span class="dv">1</span> <span class="op">&amp;</span><span class="st"> </span>output<span class="op">$</span>run <span class="op">==</span><span class="st"> </span>r, ]<span class="op">$</span>p &lt;-<span class="st"> </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N <span class="co"># add first generation&#39;s p for run r</span></span>
-<span id="cb26-9"><a href="unbiased-transmission.html#cb26-9"></a></span>
-<span id="cb26-10"><a href="unbiased-transmission.html#cb26-10"></a>    <span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span>t_max) {</span>
-<span id="cb26-11"><a href="unbiased-transmission.html#cb26-11"></a>      previous_population &lt;-<span class="st"> </span>population <span class="co"># copy individuals to previous_population tibble</span></span>
-<span id="cb26-12"><a href="unbiased-transmission.html#cb26-12"></a></span>
-<span id="cb26-13"><a href="unbiased-transmission.html#cb26-13"></a>      population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(previous_population<span class="op">$</span>trait, N, <span class="dt">replace =</span> <span class="ot">TRUE</span>))</span>
-<span id="cb26-14"><a href="unbiased-transmission.html#cb26-14"></a>      <span class="co"># randomly copy from previous generation</span></span>
-<span id="cb26-15"><a href="unbiased-transmission.html#cb26-15"></a></span>
-<span id="cb26-16"><a href="unbiased-transmission.html#cb26-16"></a>      output[output<span class="op">$</span>generation <span class="op">==</span><span class="st"> </span>t <span class="op">&amp;</span><span class="st"> </span>output<span class="op">$</span>run <span class="op">==</span><span class="st"> </span>r, ]<span class="op">$</span>p &lt;-<span class="st"> </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N <span class="co"># get p and put it into output slot for this generation t and run r</span></span>
-<span id="cb26-17"><a href="unbiased-transmission.html#cb26-17"></a>    }</span>
-<span id="cb26-18"><a href="unbiased-transmission.html#cb26-18"></a>  }</span>
-<span id="cb26-19"><a href="unbiased-transmission.html#cb26-19"></a>  output <span class="co"># export data from function</span></span>
-<span id="cb26-20"><a href="unbiased-transmission.html#cb26-20"></a>}</span></code></pre></div>
+<span id="cb26-2"><a href="unbiased-transmission.html#cb26-2"></a>  output &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">generation =</span> <span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span>t_max, r_max), </span>
+<span id="cb26-3"><a href="unbiased-transmission.html#cb26-3"></a>                   <span class="dt">p =</span> <span class="kw">as.numeric</span>(<span class="kw">rep</span>(<span class="ot">NA</span>, t_max <span class="op">*</span><span class="st"> </span>r_max)), </span>
+<span id="cb26-4"><a href="unbiased-transmission.html#cb26-4"></a>                   <span class="dt">run =</span> <span class="kw">as.factor</span>(<span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span>r_max, <span class="dt">each =</span> t_max)))</span>
+<span id="cb26-5"><a href="unbiased-transmission.html#cb26-5"></a>  <span class="co"># For each run</span></span>
+<span id="cb26-6"><a href="unbiased-transmission.html#cb26-6"></a>  <span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>r_max) {</span>
+<span id="cb26-7"><a href="unbiased-transmission.html#cb26-7"></a>    <span class="co"># Create first generation</span></span>
+<span id="cb26-8"><a href="unbiased-transmission.html#cb26-8"></a>    population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(<span class="kw">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>), N, <span class="dt">replace =</span> <span class="ot">TRUE</span>, </span>
+<span id="cb26-9"><a href="unbiased-transmission.html#cb26-9"></a>                                        <span class="dt">prob =</span> <span class="kw">c</span>(p_<span class="dv">0</span>, <span class="dv">1</span> <span class="op">-</span><span class="st"> </span>p_<span class="dv">0</span>)))</span>
+<span id="cb26-10"><a href="unbiased-transmission.html#cb26-10"></a>    </span>
+<span id="cb26-11"><a href="unbiased-transmission.html#cb26-11"></a>    <span class="co"># Add first generation&#39;s p for run r</span></span>
+<span id="cb26-12"><a href="unbiased-transmission.html#cb26-12"></a>    output[output<span class="op">$</span>generation <span class="op">==</span><span class="st"> </span><span class="dv">1</span> <span class="op">&amp;</span><span class="st"> </span>output<span class="op">$</span>run <span class="op">==</span><span class="st"> </span>r, ]<span class="op">$</span>p &lt;-<span class="st"> </span></span>
+<span id="cb26-13"><a href="unbiased-transmission.html#cb26-13"></a><span class="st">      </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N </span>
+<span id="cb26-14"><a href="unbiased-transmission.html#cb26-14"></a></span>
+<span id="cb26-15"><a href="unbiased-transmission.html#cb26-15"></a>    <span class="cf">for</span> (t <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span>t_max) {</span>
+<span id="cb26-16"><a href="unbiased-transmission.html#cb26-16"></a>      <span class="co"># Copy individuals to previous_population tibble</span></span>
+<span id="cb26-17"><a href="unbiased-transmission.html#cb26-17"></a>      previous_population &lt;-<span class="st"> </span>population </span>
+<span id="cb26-18"><a href="unbiased-transmission.html#cb26-18"></a>      </span>
+<span id="cb26-19"><a href="unbiased-transmission.html#cb26-19"></a>      <span class="co"># Randomly copy from previous generation</span></span>
+<span id="cb26-20"><a href="unbiased-transmission.html#cb26-20"></a>      population &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">trait =</span> <span class="kw">sample</span>(previous_population<span class="op">$</span>trait, N, <span class="dt">replace =</span> <span class="ot">TRUE</span>))</span>
+<span id="cb26-21"><a href="unbiased-transmission.html#cb26-21"></a>      </span>
+<span id="cb26-22"><a href="unbiased-transmission.html#cb26-22"></a>      <span class="co"># Get p and put it into output slot for this generation t and run r</span></span>
+<span id="cb26-23"><a href="unbiased-transmission.html#cb26-23"></a>      output[output<span class="op">$</span>generation <span class="op">==</span><span class="st"> </span>t <span class="op">&amp;</span><span class="st"> </span>output<span class="op">$</span>run <span class="op">==</span><span class="st"> </span>r, ]<span class="op">$</span>p &lt;-<span class="st"> </span></span>
+<span id="cb26-24"><a href="unbiased-transmission.html#cb26-24"></a><span class="st">        </span><span class="kw">sum</span>(population<span class="op">$</span>trait <span class="op">==</span><span class="st"> &quot;A&quot;</span>) <span class="op">/</span><span class="st"> </span>N  </span>
+<span id="cb26-25"><a href="unbiased-transmission.html#cb26-25"></a>    }</span>
+<span id="cb26-26"><a href="unbiased-transmission.html#cb26-26"></a>  }</span>
+<span id="cb26-27"><a href="unbiased-transmission.html#cb26-27"></a>  <span class="co"># Export data from function</span></span>
+<span id="cb26-28"><a href="unbiased-transmission.html#cb26-28"></a>  output </span>
+<span id="cb26-29"><a href="unbiased-transmission.html#cb26-29"></a>}</span></code></pre></div>
 <p><code>unbiased_transmission_3()</code> is almost identical to the previous function. The only changes are the addition of <span class="math inline">\(p_0\)</span> as an argument to the function, and the <span class="math inline">\(prob\)</span> argument in the <code>sample()</code> command. The <span class="math inline">\(prob\)</span> argument gives the probability of picking each option, in our case <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span>, in the first generation. The probability of <span class="math inline">\(A\)</span> is now <span class="math inline">\(p_0\)</span>, and the probability of <span class="math inline">\(B\)</span> is now <span class="math inline">\(1 - p_0\)</span>. We can use the same plotting function as before to visualise the result. Let’s see what happens with a different value of <span class="math inline">\(p_0\)</span>, for example <span class="math inline">\(p_0 = 0.2\)</span>.</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="unbiased-transmission.html#cb27-1"></a>data_model &lt;-<span class="st"> </span><span class="kw">unbiased_transmission_3</span>(<span class="dt">N =</span> <span class="dv">10000</span>, <span class="dt">p_0 =</span> <span class="fl">0.2</span>, <span class="dt">t_max =</span> <span class="dv">200</span>, <span class="dt">r_max =</span> <span class="dv">5</span>)</span>
 <span id="cb27-2"><a href="unbiased-transmission.html#cb27-2"></a><span class="kw">plot_multiple_runs</span>(data_model)</span></code></pre></div>

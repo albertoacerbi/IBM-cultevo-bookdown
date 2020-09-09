@@ -38,7 +38,7 @@ We can see the cultural traits of our population by simply entering its name in 
 population
 ```
 
-As expected, there is a single column called `trait` containing $A$s and $B$s. The type of the column, in this case `<chr>` (i.e. character), is reported below the name. 
+As expected, there is a single column called `trait` containing $A$s and $B$s. The type of the column, in this case '<chr>' (i.e. character), is reported below the name. 
 
 A specific individual's trait can be retrieved using the square bracket notation in R. For example, individual 4's trait can be retrieved by typing: 
 
@@ -193,7 +193,8 @@ unbiased_transmission_2 <- function(N, t_max, r_max) {
     population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE))
     
     # Add first generation's p for run r
-    output[output$generation == 1 & output$run == r, ]$p <- sum(population$trait == "A") / N 
+    output[output$generation == 1 & output$run == r, ]$p <-
+      sum(population$trait == "A") / N 
     
     # For each generation
     for (t in 2:t_max) {
@@ -204,7 +205,8 @@ unbiased_transmission_2 <- function(N, t_max, r_max) {
       population <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))
       
       # Get p and put it into output slot for this generation t and run r
-      output[output$generation == t & output$run == r, ]$p <- sum(population$trait == "A") / N 
+      output[output$generation == t & output$run == r, ]$p <- 
+        sum(population$trait == "A") / N 
     }
   }
   # Export data from function
@@ -293,10 +295,12 @@ unbiased_transmission_3 <- function(N, p_0, t_max, r_max) {
   # For each run
   for (r in 1:r_max) {
     # Create first generation
-    population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE, prob = c(p_0, 1 - p_0)))
+    population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE, 
+                                        prob = c(p_0, 1 - p_0)))
     
     # Add first generation's p for run r
-    output[output$generation == 1 & output$run == r, ]$p <- sum(population$trait == "A") / N 
+    output[output$generation == 1 & output$run == r, ]$p <- 
+      sum(population$trait == "A") / N 
 
     for (t in 2:t_max) {
       # Copy individuals to previous_population tibble
@@ -306,7 +310,8 @@ unbiased_transmission_3 <- function(N, p_0, t_max, r_max) {
       population <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))
       
       # Get p and put it into output slot for this generation t and run r
-      output[output$generation == t & output$run == r, ]$p <- sum(population$trait == "A") / N  
+      output[output$generation == t & output$run == r, ]$p <- 
+        sum(population$trait == "A") / N  
     }
   }
   # Export data from function
