@@ -186,7 +186,7 @@ traits_inter_dependence_2 <- function(N, M, t_max, k, mu, p_death, gamma){
 }  
 ```
 
-```{r 15.11, echo = FALSE}
+```{r 15.11, echo = FALSE, warning = FALSE}
 plot_multiple_traits_matrix <- function(data_model) {
   generation <- rep(1:dim(data_model)[1], dim(data_model)[2])
   
