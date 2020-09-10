@@ -237,7 +237,7 @@ for(condition in seq(0, 1, by = .1)){
 }
 ```
 
-To plot the results, we combine boxplots and `geom_jitter()` so we can see the actual data points. `geom_jitter()` is another ggplot 'geom' that adds a small amount of random variation to the location of each point in the x and y dimension of the plot (indicated by values to the `width` and `height` argument). In our case, we want a small sideways variation, i.e. the width. This is useful to show data points that would otherwise overlap.
+To plot the results, we combine boxplots and `geom_jitter()` so we can see the actual data points. (We introduced `geom_jitter()` in [chapter 5][Biased transmission: demonstrator-based indirect bias].)
 
 ```{r 15.15, fig.cap = "Increasing the probability of traits being compatible with each others produces bigger populations."}
 ggplot(data = test_inter_dependence, aes(x = gamma, y = C)) +
