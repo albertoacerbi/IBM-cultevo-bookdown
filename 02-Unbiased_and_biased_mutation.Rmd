@@ -99,8 +99,6 @@ plot_multiple_runs(data_model)
 
 You should see $p$ go from 0.1 up to 0.5. In fact, whatever the initial starting frequencies of $A$ and $B$, unbiased mutation always leads to $p = 0.5$, for the reason explained above: unbiased mutation always tends to balance the proportion of $A$s and $B$s.
 
-<!-- TO DO FROM HERE -->
-
 ## Biased mutation
 
 A more interesting case is biased mutation. Let's assume now that there is a probability $\mu_b$ that an individual with trait $B$ mutates into $A$, but there is no possibility of trait $A$ mutating into trait $B$. Perhaps trait $A$ is a particularly catchy or memorable version of a story or an intuitive explanation of a phenomenon, and $B$ is difficult to remember or unintuitive to understand.
