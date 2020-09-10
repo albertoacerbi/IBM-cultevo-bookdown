@@ -34,15 +34,15 @@ unbiased_mutation <- function(N, mu, p_0, t_max, r_max) {
       # Determine 'mutant' individuals
       mutate <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) 
       
-      # If there are 'mutants' from A to B...
+      # If there are 'mutants' from A to B
       if (nrow(population[mutate & previous_population$trait == "A", ]) > 0) { 
-        # ....then flip them to B
+        # Then flip them to B
         population[mutate & previous_population$trait == "A", ]$trait <- "B" 
       }
       
-      # if there are 'mutants' from B to A...
+      # If there are 'mutants' from B to A
       if (nrow(population[mutate & previous_population$trait == "B", ]) > 0) { 
-        # ...then flip them to A
+        # Then flip them to A
         population[mutate & previous_population$trait == "B", ]$trait <- "A" 
       }
       
@@ -119,21 +119,28 @@ biased_mutation <- function(N, mu_b, p_0, t_max, r_max) {
     output[output$generation == 1 & output$run == r, ]$p <- 
       sum(population$trait == "A") / N 
     for (t in 2:t_max) {
-      previous_population <- population # copy individuals to previous_population tibble
-
-      mutate <- sample(c(TRUE, FALSE), N, prob = c(mu_b, 1 - mu_b), replace = TRUE) # find 'mutant' individuals
-
+      # Copy individuals to previous_population tibble
+      previous_population <- population 
+      
+      # Determine 'mutant' individuals
+      mutate <- sample(c(TRUE, FALSE), N, prob = c(mu_b, 1 - mu_b), replace = TRUE) 
+      
+      # If there are 'mutants' from B to A
       if (nrow(population[mutate & previous_population$trait == "B", ]) > 0) {
-        population[mutate & previous_population$trait == "B", ]$trait <- "A" # if individual was B and mutates, flip to A
+        # Then flip them to A
+        population[mutate & previous_population$trait == "B", ]$trait <- "A"
       }
-      output[output$generation == t & output$run == r, ]$p <- sum(population$trait == "A") / N # get p and put it into output slot for this generation t and run r
+      # Get p and put it into output slot for this generation t and run r
+      output[output$generation == t & output$run == r, ]$p <- 
+        sum(population$trait == "A") / N 
     }
   }
-  output # export data from function
+  # Export data from function
+  output 
 }
 ```
 
-There are just two changes in this code compared to `unbiased_mutation()`. First, we've replaced $\mu$ with $\mu_b$ to keep the two parameters distinct and avoid confusion. Second, the line in `unbiased_mutation()` which caused individuals with $A$ to mutate to $B$ has been deleted.
+There are just two changes in this code compared to `unbiased_mutation()`. First, we've replaced `mu` with `mu_b` to keep the two parameters distinct and avoid confusion. Second, the line in `unbiased_mutation()` which caused individuals with $A$ to mutate to $B$ has been deleted.
 
 Let's see what effect this has by running `biased_mutation()`. We'll start with the population entirely composed of individuals with $B$, i.e. $p_0 = 0$, to see how quickly and in what manner $A$ spreads via biased mutation.
 
@@ -160,9 +167,9 @@ Now trait $A$ reaches fixation around generation $t = 50$. Play around with $N$ 
 
 ## Summary of the model
 
-With this simple model, we can draw the following insights. Unbiased mutation, which resembles genetic mutation in being non-directional, always leads to an equal mix of the two traits. It introduces and maintains cultural variation in the population. It is interesting to compare unbiased mutation to unbiased transmission from the previous chapter. While unbiased transmission did not change $p$ over time, unbiased mutation always converges on $p^* = 0.5$, irrespective of the starting frequency. (NB $p^* = 0.5$ assuming there are two traits; more generally, $p^* = 1/v$, where $v$ is the number of traits.) 
+With this simple model, we can draw the following insights. Unbiased mutation, which resembles genetic mutation in being non-directional, always leads to an equal mix of the two traits. It introduces and maintains cultural variation in the population. It is interesting to compare unbiased mutation to unbiased transmission from the previous chapter. While unbiased transmission did not change $p$ over time, unbiased mutation always converges on $p = 0.5$, irrespective of the starting frequency. (NB $p = 0.5$ assuming there are two traits; more generally, $p = 1/v$, where $v$ is the number of traits.) 
 
-Biased mutation, which is far more common - perhaps even typical - in cultural evolution, shows different dynamics. Novel traits favoured by biased mutation spread in a characteristic fashion - an r-shaped diffusion curve - with a speed characterised by the mutation rate $\mu_b$. Population size has little effect, whether $N = 100$ or $N = 10000$. Whenever biased mutation is present ($\mu_b > 0$), the favoured trait goes to fixation, even if it is not initially present.
+Biased mutation, which is far more common - perhaps even typical - in cultural evolution, shows different dynamics. Novel traits favoured by biased mutation spread in a characteristic fashion - an r-shaped diffusion curve - with a speed characterised by the mutation rate $\mu_b$. Population size has little effect, whether $N = 100$ or $N = 10000$. Whenever biased mutation is present ($\mu_b>0$), the favoured trait goes to fixation, even if it is not initially present.
 
 In terms of programming techniques, the major novelty in this model is the use of `sample()` to determine which individuals should undergo whatever the fixed probability specifies (in our case, mutation). This could be done with a loop, but vectorising code in the way we did here is much faster in R than loops.
 
