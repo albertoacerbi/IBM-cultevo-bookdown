@@ -16,7 +16,7 @@ If we assume that the two cultural traits are transmitted in an unbiased way, wh
 
 The output of the model will be a plot showing $p$ over all generations up to the last generation. Generations (or time steps) are denoted by $t$, where generation one is $t=1$, generation two is $t=2$, up to the last generation $t=t_{\text{max}}$. 
 
-First, we need to specify the fixed parameters of the model. These are quantities that we decide on at the start and do not change during the simulation. In this model these are `N` (the number of individuals) and `t_max` (the number of generations). Let's start with `N=100` and `t_max=200`:
+First, we need to specify the fixed parameters of the model. These are quantities that we decide on at the start and do not change during the simulation. In this model these are `N` (the number of individuals) and `t_max` (the number of generations). Let's start with `N = 100` and `t_max = 200`:
 
 ```{r 1.1}
 N <- 100
@@ -50,7 +50,7 @@ This should match the fourth row in the table above.
 
 We also need a tibble to record the output of our simulation, that is, to track the trait frequency $p$ in each generation. This will have two columns with $t_{\text{max}}$ rows, one row for each generation. The first column is simply a counter of the generations, from 1 to $t_{\text{max}}$. This will be useful for plotting the output later. The other column should contain the values of $p$ for each generation. 
 
-At this stage we don't know what $p$ will be in each generation, so for now let's fill the `output` tibble with lots of NAs, which is R's symbol for Not Available, or missing value. We can use the `rep()` (repeat) command to repeat NA $t_{\text{max}}$ times. We're using NA rather than, say, zero, because zero could be misinterpreted as $p = 0$, which would mean that all individuals have trait $B$. This would be misleading, because at the moment we haven't yet calculated $p$, so it's nonexistent, rather than zero.
+At this stage we don't know what $p$ will be in each generation, so for now let's fill the `output` tibble with lots of NAs, which is R's symbol for Not Available, or missing value. We can use the `rep()` (repeat) command to repeat NA $t_{\text{max}}$ times. We're using NA rather than, say, zero, because zero could be misinterpreted as $p=0$, which would mean that all individuals have trait $B$. This would be misleading, because at the moment we haven't yet calculated $p$, so it's nonexistent, rather than zero.
 
 ```{r 1.5}
 output <- tibble(generation = 1:t_max, p = rep(NA, t_max))
@@ -110,7 +110,7 @@ ggplot(data = output, aes(y = p, x = generation)) +
   labs(y = "p (proportion of individuals with trait A)")
 ```
 
-The proportion of individuals with trait $A$ should start off hovering around 0.5, and then oscillate randomly (it may, in some cases, also reach 0, meaning that all $A$s have disappeared, or 1, meaning that all $B$s have disappeared). Unbiased transmission, or random copying, is by definition random, so different runs of this simulation will generate different plots. If you rerun all the code you will get something different. In all likelihood, $p$ might go to 0 or 1 at some point. At $p = 0$ there are no $A$s and every individual possesses $B$. At $p = 1$ there are no $B$s and every individual possesses $A$. This is a typical feature of cultural drift, analogous to genetic drift: in small populations, with no selection or other directional processes operating, traits can be lost purely by chance after some generations.
+The proportion of individuals with trait $A$ should start off hovering around 0.5, and then oscillate randomly (it may, in some cases, also reach 0, meaning that all $A$s have disappeared, or 1, meaning that all $B$s have disappeared). Unbiased transmission, or random copying, is by definition random, so different runs of this simulation will generate different plots. If you rerun all the code you will get something different. In all likelihood, $p$ might go to 0 or 1 at some point. At $p = 0$ there are no $A$s and every individual possesses $B$. At $p=1$ there are no $B$s and every individual possesses $A$. This is a typical feature of cultural drift, analogous to genetic drift: in small populations, with no selection or other directional processes operating, traits can be lost purely by chance after some generations.
 
 ## Write a function to wrap the model code
 
@@ -279,11 +279,11 @@ data_model <- unbiased_transmission_2(N = 10000, t_max = 200, r_max = 5)
 plot_multiple_runs(data_model)
 ```
 
-The mean line should be almost exactly at $p = 0.5$ now, with the five independent runs fairly close to it.
+The mean line should be almost exactly at $p=0.5$ now, with the five independent runs fairly close to it.
 
 ## Varying initial conditions
 
-Let's add one final modification. So far the starting frequencies of $A$ and $B$ have been the same, roughly 0.5 each. But what if we were to start at different initial frequencies of $A$ and $B$? Say, $p = 0.2$ or $p = 0.9$? Would unbiased transmission keep $p$ at these initial values, or would it go to $p = 0.5$ as we have found so far?
+Let's add one final modification. So far the starting frequencies of $A$ and $B$ have been the same, roughly 0.5 each. But what if we were to start at different initial frequencies of $A$ and $B$? Say, $p=0.2$ or $p=0.9$? Would unbiased transmission keep $p$ at these initial values, or would it go to $p=0.5$ as we have found so far?
 
 To find out, we can add another parameter, `p_0`, which specifies the initial probability of an individual having an $A$ rather than a $B$ in the first generation. Previously this was always `p_0 = 0.5`, but in the new function below we add it to the `sample()` function to weight the initial allocation of traits.
 
@@ -319,14 +319,14 @@ unbiased_transmission_3 <- function(N, p_0, t_max, r_max) {
 }
 ```
 
-`unbiased_transmission_3()` is almost identical to the previous function. The only changes are the addition of $p_0$ as an argument to the function, and the $prob$ argument in the `sample()` command. The $prob$ argument gives the probability of picking each option, in our case $A$ and $B$, in the first generation. The probability of $A$ is now $p_0$, and the probability of $B$ is now $1 - p_0$. We can use the same plotting function as before to visualise the result. Let's see what happens with a different value of $p_0$, for example $p_0 = 0.2$.
+`unbiased_transmission_3()` is almost identical to the previous function. The only changes are the addition of $p_0$ as an argument to the function, and the $prob$ argument in the `sample()` command. The $prob$ argument gives the probability of picking each option, in our case $A$ and $B$, in the first generation. The probability of $A$ is now $p_0$, and the probability of $B$ is now $1-p_0$. We can use the same plotting function as before to visualise the result. Let's see what happens with a different value of $p_0$, for example $p_0=0.2$.
 
 ```{r 1.23, fig.cap = "Unbiased transmission does not change trait frequencies from the starting conditions, barring random fluctuations"}
 data_model <- unbiased_transmission_3(N = 10000, p_0 = 0.2, t_max = 200, r_max = 5)
 plot_multiple_runs(data_model)
 ```
 
-With $p_0 = 0.2$, trait frequencies stay at $p = 0.2$. Unbiased transmission is truly non-directional: it maintains trait frequencies at whatever they were in the previous generation, barring random fluctuations caused by small population sizes.
+With $p_0=0.2$, trait frequencies stay at $p=0.2$. Unbiased transmission is truly non-directional: it maintains trait frequencies at whatever they were in the previous generation, barring random fluctuations caused by small population sizes.
 
 ## Summary of the model
 
