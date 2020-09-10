@@ -1,0 +1,67 @@
+---
+title: "style_notes"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Text
+
+I tried to use the mathematical notation for variables when we talk about them as abstract entities, e.g. "Here we will simulate a case where $N$ individuals each possess one of two mutually exclusive cultural traits. These alternative traits are denoted $A$ and $B$" or "We will call this proportion $p$. We could also track the proportion who possess trait $B$, but this will always be $1 - p$ given that the two traits are mutually exclusive".
+
+However, when they are referred as part of the code, I used the code notation, e.g. "It then puts this proportion in the first slot of `p` in `output`". The distinction is not always very clear, e.g. in the first chapter the usage of $t_{\text{max}}$ versus `t_max`, but it seems reasonable to me.
+
+Parts of the code, data structures, etc. are always in code notation (thus, no more **bold** for anything.)
+
+For the time being, I kept the name of variables as they were. Some are descriptive (`population`, `trait`, etc.), some are not (`p`, `mu`, `N`). Perhaps a mix of the two is not that bad.
+
+I used single quotes for technical terms: e.g. "The term 'oblique' means" or "In ggplot, 'geoms' describe what kind of visual representation should be plotted".
+
+## Code
+
+For the actual code, I mostly used the tidyverse [style guide](https://style.tidyverse.org) with some ad hoc choices. Name of functions and variables are with underscores to separate words and lowercase letters, e.g. `previous_population`, `biased_mutation`, etc.
+
+If in the same chapter we have more than one function for the same model (for example because we add parameters), they are numbered as `unbiased_transmission_1()`, `unbiased_transmission_2()`, etc.
+
+To avoid long lines (so that they print in a page), I separated function calls by argument per line (one or more):
+
+```{r eval=FALSE}
+output <- tibble(generation = rep(1:t_max, r_max),
+                 p = as.numeric(rep(NA, t_max * r_max)),
+                 run = as.factor(rep(1:r_max, each = t_max)))
+
+population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE,
+                                    prob = c(p_0, 1 - p_0)))
+```
+
+Also to avoid long lines, I separated assignment after the assignment operator:
+
+```{r eval=FALSE}
+output[output$generation == 1 & output$run == r, ]$p <-
+      sum(population$trait == "A") / N
+```
+
+For comments, I put them above the line commented (again, to avoid long lines). They start with capital letter, and do not have full stop.
+
+```{r eval=FALSE}
+# Determine 'mutant' individuals
+mutate <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE)
+```
+
+For the rest, I followed the basic guidances:
+
+* space after comma (not before).
+
+* spaces surrounding operators (`-`, `<-`, `=`, `==`, etc.), but not `$`, `^`, and `:`.
+
+* `<-` and not `=` for assignments.
+
+* `TRUE` and `FALSE` instead of `T` and `F`.
+
+* no space around parenthesis.
+
+* `"` double quotes for quoting.
+
+Probably I forgot something, we can add here.
