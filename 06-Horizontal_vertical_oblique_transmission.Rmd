@@ -20,50 +20,66 @@ The following function `vertical_transmission()` is very similar to previous sim
 library(tidyverse)
 
 vertical_transmission <- function(N, p_0, b, t_max, r_max) {
-  output <- tibble(generation = rep(1:t_max, r_max), p = as.numeric(rep(NA, t_max * r_max)), run = as.factor(rep(1:r_max, each = t_max)))
+  output <- tibble(generation = rep(1:t_max, r_max), 
+                   p = as.numeric(rep(NA, t_max * r_max)), 
+                   run = as.factor(rep(1:r_max, each = t_max)))
   
   for (r in 1:r_max) {
-    population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE, prob = c(p_0, 1 - p_0)))
-    # create first generation
+    # Create first generation
+    population <- tibble(trait = sample(c("A", "B"), N, 
+                                        replace = TRUE, prob = c(p_0, 1 - p_0)))
     
-    output[output$generation == 1 & output$run == r, ]$p <- sum(population$trait == "A") / N # add first generation's p for run r
+    # Add first generation's p for run r
+    output[output$generation == 1 & output$run == r, ]$p <- 
+      sum(population$trait == "A") / N 
     
     for (t in 2:t_max) {
-      previous_population <- population # copy individuals to previous_population tibble
+       # Copy individuals to previous_population tibble
+      previous_population <- population
       
-      mother <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  # randomly pick mothers
-      father <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  # randomly pick fathers
+      # Randomly pick mothers and fathers
+      mother <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  
+      father <- tibble(trait = sample(previous_population$trait, N, replace = TRUE)) 
       
-      population <- tibble(trait = as.character(rep(NA, N))) # next generation
+      # Prepare next generation
+      population <- tibble(trait = as.character(rep(NA, N))) 
       
+      # Both parents are A, thus child adopts A
       both_A <- mother$trait == "A" & father$trait == "A"
       if (sum(both_A) > 0) {
-        population[both_A, ]$trait <- "A"  # parents both A, adopt A
+        population[both_A, ]$trait <- "A"  
       }
       
+      # Both parents are B, thus child adopts B
       both_B <- mother$trait == "B" & father$trait == "B"
       if (sum(both_B) > 0) {
-        population[both_B, ]$trait <- "B"  # parents both B, adopt B
+        population[both_B, ]$trait <- "B" 
+      }
+      # If any empty NA slots (i.e. one A and one B parent) are present
+      if (anyNA(population)) {  
+        # They adopt A with probability b
+        population[is.na(population)[,1],]$trait <- 
+          sample(c("A", "B"), sum(is.na(population)), prob = c(b, 1 - b), replace = TRUE)
       }
       
-      if (anyNA(population)) {  # if any empty NA slots (i.e. one A and one B parent) are present...
-        population[is.na(population)[,1],]$trait <- sample(c("A", "B"), sum(is.na(population)), prob = c(b, 1 - b), replace = TRUE)
-        # ...make them A with probability b
-      }
-      
-      output[output$generation == t & output$run == r, ]$p <- sum(population$trait == "A") / N # get p and put it into output slot for this generation t and run r
+      # Get p and put it into output slot for this generation t and run r
+      output[output$generation == t & output$run == r, ]$p <- 
+        sum(population$trait == "A") / N 
     }
   }
-  output # export data from function
+  # Export data from function
+  output 
 }
 
 ```
+
+<!-- TO DO FROM HERE -->
 
 First we set up an output tibble to store the frequency of $A$ ($p$) over $t_{\text{max}}$ generations and across $r_{\text{max}}$ runs. As before we create a `population` tibble to store our $N$ traits, one per individual.
 
 This time, however, in each generation we create two new tibbles, `mother` and `father`. These store the traits of two randomly chosen individuals from the `previous_population`, one pair for each new individual. Note that we are assuming random mating here: parents pair up entirely at random. Alternative mating rules are possible, such as assortative cultural mating, where parents preferentially assort based on their cultural trait. We will leave it to readers to create models of this.
 
-Once the `mother` and `father` tibbles are created, we can fill in the new individuals' traits in `population`. `both_A` is used to mark with TRUE whether both mother and father have trait $A$, and (assuming some such cases exist), sets all individuals in `population` for whom this is true to have trait $A$. `both_B` works equivalently for parents who both possess trait $B$.
+Once the `mother` and `father` tibbles are created, we can fill in the new individuals' traits in `population`. `both_A` is used to mark with `TRUE` whether both mother and father have trait $A$, and (assuming some such cases exist), sets all individuals in `population` for whom this is true to have trait $A$. `both_B` works equivalently for parents who both possess trait $B$.
 
 The remaining cases (identified as still being NA in the `population` tibble) must have one $A$ and one $B$ parent. We are not concerned with which parent has which in this simple model, so in each of these cases we set the individual's trait to be $A$ with probability $b$ and $B$ with probability $1-b$. Again, we leave it to readers to modify the code to have separate probabilities for maternal and paternal transmission.
 
