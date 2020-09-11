@@ -97,20 +97,20 @@ plot_multiple_runs <- function(data_model) {
 And now run both functions to see what happens. Remember we are interested in how fast the favoured trait spreads, so let's start it off at a low frequency ($p_0=0.01$) so we can see it spreading from rarity. We use a small transmission bias $b=0.6$ favouring $A$.
 
 ```{r 6.3, fig.cap = "The favourite trait, A, spreads in the population under vertical transmission."}
-data_model <- vertical_transmission(N = 10000, p_0 = 0.01, b = 0.6, t_max = 50, r_max = 5)
+data_model <- vertical_transmission(N = 10000, p_0 = 0.01, b = 0.6, 
+                                    t_max = 50, r_max = 5)
 plot_multiple_runs(data_model)
 ```
 
 Here we can see a gradual spread of the favoured trait $A$ from $p=0.01$ to $p=1$. As in our [directly biased transmission model][Biased transmission: direct bias], the diffusion curve is s-shaped. To obtain the same result with two different models is encouraging! We can also test our prediction that when $b=0.5$, we recreate our unbiased transmission model from [Chapter 1][Unbiased transmission]:
 
 ```{r 6.4, fig.cap = "When no trait is favoured, there is no change in the frequency of trait A under vertical transmission."}
-data_model <- vertical_transmission(N = 10000, p_0 = 0.1, b = 0.5, t_max = 50, r_max = 5)
+data_model <- vertical_transmission(N = 10000, p_0 = 0.1, b = 0.5, 
+                                    t_max = 50, r_max = 5)
 plot_multiple_runs(data_model)
 ```
 
 As predicted, there is no change in starting trait frequencies when $b=0.5$. If you reduce the sample size, you will see much more fluctuation across the runs, with some runs losing $A$ altogether.
-
-<!-- TO DO FROM HERE -->
 
 ## Horizontal cultural transmission
 
@@ -122,80 +122,106 @@ The following code implements this horizontal transmission in a new function `ve
 
 ```{r 6.5}
 vertical_horizontal_transmission <- function(N, p_0, b, n, g, t_max, r_max) {
-  output <- tibble(generation = rep(1:t_max, r_max), p = as.numeric(rep(NA, t_max * r_max)), run = as.factor(rep(1:r_max, each = t_max)))
+  output <- tibble(generation = rep(1:t_max, r_max), 
+                   p = as.numeric(rep(NA, t_max * r_max)), 
+                   run = as.factor(rep(1:r_max, each = t_max)))
   
   for (r in 1:r_max) {
-    population <- tibble(trait = sample(c("A", "B"), N, replace = TRUE, prob = c(p_0, 1 - p_0)))
-    # create first generation
+    # Create first generation
+    population <- tibble(trait = sample(c("A", "B"), N, 
+                                        replace = TRUE, prob = c(p_0, 1 - p_0)))
     
-    output[output$generation == 1 & output$run == r, ]$p <- sum(population$trait == "A") / N # add first generation's p for run r
+    # Add first generation's p for run r
+    output[output$generation == 1 & output$run == r, ]$p <- 
+      sum(population$trait == "A") / N 
     
-    # vertical transmission
     for (t in 2:t_max) {
-      previous_population <- population # copy individuals to previous_population tibble
+      # Vertical transmission --------------------------------------------------
       
-      mother <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  # randomly pick mothers
-      father <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  # randomly pick fathers
+      # Copy individuals to previous_population tibble
+      previous_population <- population 
       
-      population <- tibble(trait = as.character(rep(NA, N)))  # next generation
+      # Randomly pick mothers and fathers
+      mother <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  
+      father <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  
       
+      # Prepare next generation
+      population <- tibble(trait = as.character(rep(NA, N))) 
+      
+      # Both parents are A, thus child adopts A
       both_A <- mother$trait == "A" & father$trait == "A"
-      if ( sum(both_A) > 0 ) {
-        population[both_A, ]$trait <- "A"  # parents both A, adopt A
+      if (sum(both_A) > 0) {
+        population[both_A, ]$trait <- "A"  
       }
       
+      # Both parents are B, thus child adopts B
       both_B <- mother$trait == "B" & father$trait == "B"
-      if ( sum(both_B) > 0) {
-        population[both_B, ]$trait <- "B"  # parents both B, adopt B
+      if (sum(both_B) > 0) {
+        population[both_B, ]$trait <- "B" 
+      }
+      # If any empty NA slots (i.e. one A and one B parent) are present
+      if (anyNA(population)) {  
+        # They adopt A with probability b
+        population[is.na(population)[,1],]$trait <- 
+          sample(c("A", "B"), sum(is.na(population)), prob = c(b, 1 - b), replace = TRUE)
       }
       
-      if (anyNA(population)) {  # if any empty NA slots (i.e. one A and one B parent) are present...
-        population[is.na(population)[,1],]$trait <- sample(c("A", "B"), sum(is.na(population)), prob = c(b, 1 - b), replace = TRUE)
-        # ...make them A with probability b
-      }
+      # Horizontal transmission ------------------------------------------------
       
-      # horizontal transmission
-      previous_population <- population # previous_population are children before horizontal transmission, population are children after horizontal transmission
+      # Previous_population are children before horizontal transmission
+      previous_population <- population 
       
-      N_B <- length(previous_population$trait[previous_population$trait == "B"])  # N_B = number of Bs
+      # N_B = number of Bs
+      N_B <- length(previous_population$trait[previous_population$trait == "B"])  
       
-      if (N_B > 0 & n > 0) {  # if there are B individuals to switch, and n is not zero
-        
-        for (i in 1:N_B) {  # for each B individual...
-          
-          demonstrator <- sample(previous_population$trait, n, replace = TRUE) # pick n demonstrators
-          copy <- sample(c(TRUE, FALSE), n, prob = c(g, 1-g), replace = TRUE)  # get probability g
-          
-          if ( sum(demonstrator == "A" & copy == TRUE) > 0 ) {  # if any demonstrators with A are to be copied...
-            population[previous_population$trait == "B",]$trait[i] <- "A"  # ...the B individual switches to A
+      # If there are B individuals to switch, and n is not zero
+      if (N_B > 0 & n > 0) {  
+        # For each B individual...
+        for (i in 1:N_B) {  
+          # Pick n demonstrators
+          demonstrator <- sample(previous_population$trait, n, replace = TRUE)
+          # Get probability g
+          copy <- sample(c(TRUE, FALSE), n, prob = c(g, 1-g), replace = TRUE) 
+          # if any demonstrators with A are to be copied
+          if ( sum(demonstrator == "A" & copy == TRUE) > 0 ) {  
+            # The B individual switches to A
+            population[previous_population$trait == "B",]$trait[i] <- "A"  
           }
         
         }
       }
-      
-      output[output$generation == t & output$run == r, ]$p <- sum(population$trait == "A") / N # get p and put it into output slot for this generation t and run r
+      # Get p and put it into output slot for this generation t and run r
+      output[output$generation == t & output$run == r, ]$p <- 
+        sum(population$trait == "A") / N 
     }
   }
-  output # export data from function
+  # Export data from function
+  output 
 }
 
 ```
 
-The first part of this code is identical to `vertical_transmission`. Then there is horizontal transmission. We put `population` into `previous_population` again, but now `population` contains the individuals after horizontal transmission, and `previous_population` contains the individuals before. $N_B$ holds the individuals in `previous_population` who are $B$, as they are the only ones we need to concern ourselves with ($A$ individuals do not change). If there are such individuals ($N_B>0$), and individuals are learning from at least one individual ($n>0$), then for each individual we pick $n$ demonstrators, and if any of those demonstrators are $A$ plus probability $g$ is fulfilled, we set the individual to $A$.
+The first part of this code is identical to `vertical_transmission()`. Then there is horizontal transmission. We put `population` into `previous_population` again, but now `population` contains the individuals after horizontal transmission, and `previous_population` contains the individuals before. `N_B` holds the individuals in `previous_population` who are $B$, as they are the only ones we need to concern ourselves with ($A$ individuals do not change). If there are such individuals ($N_B>0$), and individuals are learning from at least one individual ($n>0$), then for each individual we pick $n$ demonstrators, and if any of those demonstrators are $A$ plus probability $g$ is fulfilled, we set the individual to $A$.
 
 Running horizontal transmission with $n=5$ and $g=0.1$ and without vertical transmission bias ($b=0.5$) causes, as expected, $A$ to spread.
 
 ```{r 6.6, fig.cap = "The favourite trait, A, spreads in the population under horizontal transmission."}
-data_model <- vertical_horizontal_transmission(N = 5000, p_0 = 0.01, b = 0.5, n = 5, g = 0.1, t_max = 50, r_max = 5)
+data_model <- vertical_horizontal_transmission(N = 5000, p_0 = 0.01, b = 0.5, n = 5, 
+                                               g = 0.1, t_max = 50, r_max = 5)
 plot_multiple_runs(data_model)
 ```
 
 This plot above confirms that horizontal cultural transmission, with some direct bias in the form of $g$, again generates an s-shaped curve and causes the favoured trait to spread. But we haven't yet done what we set out to do, which is compare the speed of the different pathways. The following code generates three datasets, one with only vertical transmission and $b=0.6$, one with only horizontal transmission with $n=2$ and $g=0.1$ which is roughly equivalent to two parents and a bias of $b=0.6$ (0.1 higher than unbiased), and one with only horizontal transmission with $n=5$ and $g=0.1$.
 
 ```{r 6.7}
-data_model_v <- vertical_horizontal_transmission(N = 5000, p_0 = 0.01, b = 0.6, n = 0, g = 0, t_max = 50, r_max = 5)
-data_model_hn2 <- vertical_horizontal_transmission(N = 5000, p_0 = 0.01, b = 0.5, n = 2, g = 0.1, t_max = 50, r_max = 5)
-data_model_hn5 <- vertical_horizontal_transmission(N = 5000, p_0 = 0.01, b = 0.5, n = 5, g = 0.1, t_max = 50, r_max = 5)
+data_model_v <- vertical_horizontal_transmission(N = 5000, p_0 = 0.01, b = 0.6, n = 0, 
+                                                 g = 0, t_max = 50, r_max = 5)
+
+data_model_hn2 <- vertical_horizontal_transmission(N = 5000, p_0 = 0.01, b = 0.5, n = 2, 
+                                                   g = 0.1, t_max = 50, r_max = 5)
+
+data_model_hn5 <- vertical_horizontal_transmission(N = 5000, p_0 = 0.01, b = 0.5, n = 5, 
+                                                   g = 0.1, t_max = 50, r_max = 5)
 ```
 
 ```{r 6.8, fig.cap = "The favourite trait, A, spreads in the population under vertical transmission only."}
