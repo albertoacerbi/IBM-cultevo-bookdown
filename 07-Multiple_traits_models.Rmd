@@ -18,27 +18,35 @@ You can inspect the `population` tibble by writing its name.
 population
 ```
 
-The basic code of the simulation is similar to the code in the [first chapter][Unbiased transmission], but what should the `output` be? Until now, we just needed to save the frequency of one of the two traits, because the frequency of the other was always one minus the first's frequency. Now we need the frequencies of all $N$ traits. (Technically, we only need to track $N-1$ frequencies, with the last inferred by substracting the other frequencies from 1. But for simplicity we'll track all of the frequencies.) 
+The basic code of the simulation is similar to the code in the [first chapter][Unbiased transmission], but what should the `output` be? Until now, we generally just needed to save the frequency of one of the two traits, because the frequency of the other was always one minus the first's frequency. Now we need the frequencies of all $N$ traits. (Technically, we only need to track $N-1$ frequencies, with the last inferred by substracting the other frequencies from 1. But for simplicity we'll track all of the frequencies.) 
 
 Second, how do we measure the frequency of the traits in each generation? The base R function `tabulate()` does this for us. `tabulate()` counts the number of times each element of a vector (`population$trait` in our case) occurs in the bins that we also pass to the function. In our case the bins are $1$ to $N$. Since we want the frequencies, and not the absolute number, we divide the result by $N$.
 
 ```{r 7.3}
 multiple_traits <- function(N, t_max) {
   
-  output <- tibble(trait = as.factor(rep(1:N, each = t_max)), generation = rep(1:t_max, N), p = as.numeric(rep(NA, t_max * N)))
-
-  population <- tibble(trait = sample(1:N, N, replace = TRUE))  # create first generation
+  output <- tibble(trait = as.factor(rep(1:N, each = t_max)), 
+                   generation = rep(1:t_max, N), 
+                   p = as.numeric(rep(NA, t_max * N)))
   
-  output[output$generation == 1, ]$p <- tabulate(population$trait, nbins = N) / N  # add first generation's p for all traits
+  # Create first generation
+  population <- tibble(trait = sample(1:N, N, replace = TRUE))  
+  
+  # Add first generation's p for all traits
+  output[output$generation == 1, ]$p <- tabulate(population$trait, nbins = N) / N  
 
   for (t in 2:t_max) {
-    previous_population <- population # copy individuals to previous_population tibble
-
-    population <- tibble(trait = sample(previous_population$trait, N, replace = TRUE)) # randomly copy from previous generation
-
-    output[output$generation == t, ]$p <- tabulate(population$trait, nbins = N) / N  # get p for all traits and put it into output slot for this generation t
+    # copy individuals to previous_population tibble
+    previous_population <- population 
+    
+    # Randomly copy from previous generation
+    population <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))
+    
+    # Get p for all traits and put it into output slot for this generation t
+    output[output$generation == t, ]$p <- tabulate(population$trait, nbins = N) / N  
   }
-  output # export data from function
+  # Export data from function
+  output 
 }
 ```
 
@@ -80,21 +88,22 @@ The following code adds innovation to the multiple-trait code from above:
 
 ```{r 7.7}
 mu <- 0.01
-
-last_trait <- max(population) # record the last trait introduced in the population
-
-previous_population <- population # copy the population tibble to previous_population tibble
-
-population <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  # randomly copy from previous generation
-
-innovators <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) # identify the innovators
-
-if( sum(innovators) > 0){ # if there are innovators
-  population[innovators,]$trait <- (last_trait + 1):(last_trait + sum(innovators)) # replace innovators' traits with new traits
+# Record the last trait introduced in the population
+last_trait <- max(population) 
+# Copy the population tibble to previous_population tibble
+previous_population <- population 
+# Randomly copy from previous generation
+population <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  
+# Identify the innovators
+innovators <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) 
+# if there are innovators
+if( sum(innovators) > 0){ 
+  # Replace innovators' traits with new traits
+  population[innovators,]$trait <- (last_trait + 1):(last_trait + sum(innovators)) 
 }
 ```
 
-There are two modifications here. First, we need to select who are the innovators. For that, we use again the function `sample()`, biased by $\mu$, picking $TRUE$ (corresponding to being an innovator) or $FALSE$ (keeping the copied cultural trait) $N$ times.
+There are two modifications here. First, we need to select who are the innovators. For that, we use again the function `sample()`, biased by $\mu$, picking `TRUE` (corresponding to being an innovator) or `FALSE` (keeping the copied cultural trait) $N$ times.
 
 Second, we need to actually introduce the new traits, with the correct number labels. First we record at the beginning of each generation the label of the last trait introduced (at the beginning, with $N=100$, it will likely be 100 because we initialise each individual's traits by choosing randomly between 1 and 100). When new traits are introduced, we give them consecutive number labels: the first new trait will be called 101, the second 102, and so on. The code above adds all of the new traits into the innovator slots all in one go, which is more efficient than doing it one innovator at a time.
 
@@ -104,34 +113,47 @@ We can now, as usual, wrap everything in a function:
 multiple_traits_2 <- function(N, t_max, mu) {
   max_traits <- N + N * mu * t_max
 
-  output <- tibble(trait = as.factor(rep(1:max_traits, each = t_max)), generation = rep(1:t_max, max_traits), p = as.numeric(rep(NA, t_max * max_traits)))
-
-  population <- tibble(trait = sample(1:N, N, replace = TRUE))  # create first generation
+  output <- tibble(trait = as.factor(rep(1:max_traits, each = t_max)), 
+                   generation = rep(1:t_max, max_traits), 
+                   p = as.numeric(rep(NA, t_max * max_traits)))
   
-  output[output$generation == 1, ]$p <- tabulate(population$trait, nbins = max_traits) / N  # add first generation's p for all traits
+  # Create first generation
+  population <- tibble(trait = sample(1:N, N, replace = TRUE))  
+  # Add first generation's p for all traits
+  output[output$generation == 1, ]$p <- 
+    tabulate(population$trait, nbins = max_traits) / N  
 
   for (t in 2:t_max) {
-    last_trait <- max(population) # record what is the last trait introduced in the population
-
-    previous_population <- population # copy individuals to previous_population tibble
-
-    population <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  # randomly copy from previous generation
-
-    innovators <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) # select the innovators
+    # Record what is the last trait introduced in the population
+    last_trait <- max(population) 
+    
+    # Copy individuals to previous_population tibble
+    previous_population <- population 
+    
+    # Randomly copy from previous generation
+    population <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  
+    
+    # Select the innovators
+    innovators <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) 
     if ((last_trait + sum(innovators)) < max_traits) {  
-      if( sum(innovators) > 0){
-        population[innovators,]$trait <- (last_trait + 1):(last_trait + sum(innovators)) # replace innovators' traits with new traits
+      if(sum(innovators) > 0){
+        # Replace innovators' traits with new traits
+        population[innovators,]$trait <- 
+          (last_trait + 1):(last_trait + sum(innovators)) 
       }
     }
-    output[output$generation == t, ]$p <- tabulate(population$trait, nbins = max_traits) / N # get p for all traits and put it into output slot for this generation t
+    # Get p for all traits and put it into output slot for this generation t
+    output[output$generation == t, ]$p <- 
+      tabulate(population$trait, nbins = max_traits) / N 
   }
-  output # export data
+  # Export data
+  output 
 }
 ```
 
 You should now be familiar with more or less everything within this function, with one exception: the new quantity *max_traits*. This is a trick we are using to avoid making the code too slow to run. Our `output` tibble, as you remember, records all the frequencies of all traits. When programming, a good rule-of-thumb is to avoid dynamically modifying the size of your data structures, such as adding new rows to a pre-existing tibble during the simulation. Where possible, set the size of a data structure at the start, and then modify its values during the simulation. So rather than creating a tibble that is expanded dynamically as new traits are introduced via innovation, we create a bigger tibble from the start. How big should it be? We do not know for sure, but a good estimate is that we will need space for the initial traits ($N$), plus around $N\mu$ traits that are added each generation.
 
-To be absolutely sure we do not exceed this estimate, we wrap the innovation instruction within the `if ((last_trait + sum(innovators)) < max_traits)` condition. This prevents innovation when the tibble has filled up. This might prevent innovation in the last few generations, but generally this should hae negligible consequences for our purposes.
+To be absolutely sure we do not exceed this estimate, we wrap the innovation instruction within the `if ((last_trait + sum(innovators)) < max_traits)` condition. This prevents innovation when the tibble has filled up. This might prevent innovation in the last few generations, but  this should have negligible consequences for our purposes.
 
 Let's now run the function with an innovation rate $\mu=0.01$, a population of 100 individuals, and for 200 generations.
 
@@ -174,11 +196,11 @@ end_time - start_time
 
 While this varies from computer to computer, it may take several seconds to finsh. To store the output, we are using a tibble with $1100000$ data points, as *max_traits* is equal to $1100$, which needs to be updated in each of the $1000$ generations. One way of speeding up the simulation is to record our output in a different data structure.
 
-So far, we have been using tibbles to store our simulation output. R, as with all programming languages, can store data in different structures. Depending on what the data are and what one wants to do with them, different structures are more or less suitable. The advantage of tibbles is that they can contain heterogeneous data, depending on what we need to store: for example, in our `output` tibble, the $trait$ column was specified as a factor, whereas the others two columns, $generation$ and $p$, were numeric.
+So far, we have been using tibbles to store our simulation output. R, as with all programming languages, can store data in different structures. Depending on what the data are and what one wants to do with them, different structures are more or less suitable. The advantage of tibbles is that they can contain heterogeneous data, depending on what we need to store: for example, in our `output` tibble, the `trait` column was specified as a factor, whereas the others two columns, `generation` and `p`, were numeric.
 
 An alternative is to use vectors and matrices. A vector is a list of data points that are all of the same type, e.g. logical (TRUE/FALSE), integer (whole numbers), numeric (any numbers), or character (text). Matrices are just two-dimensional vectors: they must also contain all the same type of data, but they have rows and columns similar to a tibble, dataframe or Excel spreadsheet. The advantage of vectors and matrices is efficiency: they make simulations much faster than identical code running with tibbles.
 
-Let's rewrite our multiple trait function that runs exactly the same simulation, but using matrices instead of tibbles. The output is now a matrix with $t_\text{max}$ rows and *max_traits* columns. This is initialised with NAs at the beginning. The population is a vector of integers, representing the trait held by each individual.  
+Let's rewrite our multiple trait function that runs exactly the same simulation, but using matrices instead of tibbles. The output is now a matrix with `t_max` rows and `max_traits` columns. This is initialised with NAs at the beginning. The population is a vector of integers, representing the trait held by each individual.  
 
 ```{r 7.14}
 multiple_traits_matrix <- function(N, t_max, mu) {
@@ -187,27 +209,32 @@ multiple_traits_matrix <- function(N, t_max, mu) {
   
   output <- matrix(data = NA, nrow = t_max, ncol = max_traits)
   
-  # create first generation
+  # Create first generation
   population <- sample(1:N, N, replace = TRUE)
   output[1, ] <- tabulate(population, nbins = N) / N
   
-  # add first generation's p for all traits
+  # Add first generation's p for all traits
   for (t in 2:t_max) {
-    last_trait <- max(population) # record what is the last trait introduced in the population
-  
-    previous_population <- population # copy individuals to previous_population tibble
+    # Record what is the last trait introduced in the population
+    last_trait <- max(population) 
     
+    # Copy individuals to previous_population tibble
+    previous_population <- population 
+    
+    # Randomly copy from previous generation
     population <- sample(previous_population, N, replace = TRUE)
-    # randomly copy from previous generation
     
-    innovators <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) # select the innovators
+    # Select the innovators
+    innovators <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) 
     if ((last_trait + sum(innovators)) < max_traits) {
-      population[innovators] <- (last_trait + 1):(last_trait + sum(innovators)) # replace innovators' traits with new traits
+      # Replace innovators' traits with new traits
+      population[innovators] <- (last_trait + 1):(last_trait + sum(innovators)) 
     }
-    
-    output[t, ] <- tabulate(population, nbins = max_traits) / N # get p for all traits and put it into output slot for this generation t
+    # Get p for all traits and put it into output slot for this generation t
+    output[t, ] <- tabulate(population, nbins = max_traits) / N 
   }
-  output # export data
+  # Export data
+  output 
 }
 ```
 
@@ -218,7 +245,7 @@ plot_multiple_traits_matrix <- function(data_model) {
   generation <- rep(1:dim(data_model)[1], dim(data_model)[2])
   
   data_to_plot <- as_tibble(data_model) %>%
-    gather( key = "trait", value = "p") %>%
+    gather(key = "trait", value = "p") %>%
     add_column(generation)
   
   ggplot(data = data_to_plot, aes(y = p, x = generation)) +
@@ -261,16 +288,17 @@ ggplot(data = data_to_plot, aes(x = seq_along(cumulative), y = cumulative)) +
   labs(x = "trait label", y = "cumulative popularity")
 ```
 
-This is an example of a long-tailed distribution. The great majority of traits did not spread in the population, and their cumulative popularity is very close to one. Very few of them---the ones on the left side of the plot---were instead very successful. Long-tailed distributions like the one we just produced are very common for cultural traits: a small number of movies, books, or first names are very popular, while the great majority is not. In addition, in these domains, the popular traits are *much* more popular than the unpopular ones. The average cumulative popularity is `mean(cumulative)`, but the most successful trait has a popularity of `max(cumulative)`.
+This is an example of a long-tailed distribution. The great majority of traits did not spread in the population, and their cumulative popularity is very close to one. Very few of them---the ones on the left side of the plot---were instead very successful. Long-tailed distributions like the one we just produced are very common for cultural traits: a small number of movies, books, or first names are very popular, while the great majority is not. In addition, in these domains, the popular traits are *much* more popular than the unpopular ones. The average cumulative popularity of the data we plotted is `r round(mean(cumulative), 2)`, but the most successful trait has a popularity of `r format(max(cumulative), scientific = FALSE)`.
 
 It is common to plot these distributions by binning the data in intervals of exponentially increasing size. In other words, we want to know how many traits have a cumulative popularity between 1 and 2, then between 2 and 4, then between 4 and 8, and so on, until we reach the maximum value of cumulative popularity. The code below does that, using a `for` cycle to find how many traits fall in each bin and further normalising according to bin size. The size is increased 50 times, until an arbitrary maximum bin size of $2^{50}$, to be sure to include all cumulative popularities.
 
 ```{r 7.19}
 bin <- rep(NA, 50)
 x <- rep(NA, 50)
-for( i in 1:50 ){
-  bin[i] <- sum( cumulative >= 2^(i-1) & cumulative < 2^i)
-  bin[i] <- ( bin[i] / length( cumulative ) ) / 2^(i-1);
+
+for(i in 1:50){
+  bin[i] <- sum(cumulative >= 2^(i - 1) & cumulative < 2^i)
+  bin[i] <- (bin[i] / length( cumulative)) / 2^(i - 1);
   x[i] <- 2^i
 }
 ```
