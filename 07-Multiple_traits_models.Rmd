@@ -237,15 +237,15 @@ multiple_traits_matrix <- function(N, t_max, mu) {
   output 
 }
 ```
-
-To plot the output, we re-convert it into a tibble so that it can be handled by `ggplot()`. We first create a column that explicitly indicates the number of generations, and then we use the function `gather()` from the tidyverse to reassemble the columns of the matrix in key-value pairs.
+<!-- TO DO -->
+To plot the output, we re-convert it into a tibble so that it can be handled by `ggplot()`. We first create a column that explicitly indicates the number of generations, and then we use the function `pivot_longer()` from the tidyverse to reassemble the columns of the matrix in trait-frequency pairs, the 'tidy' format consisten with the functioning of ggplot.
 
 ```{r 7.15}
 plot_multiple_traits_matrix <- function(data_model) {
-  generation <- rep(1:dim(data_model)[1], dim(data_model)[2])
+  generation <- rep(1:dim(data_model)[1], each = dim(data_model)[2])
   
   data_to_plot <- as_tibble(data_model) %>%
-    gather(key = "trait", value = "p") %>%
+    pivot_longer(everything(), names_to = "trait", values_to = "p") %>%
     add_column(generation)
   
   ggplot(data = data_to_plot, aes(y = p, x = generation)) +
