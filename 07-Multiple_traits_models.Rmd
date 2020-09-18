@@ -36,7 +36,7 @@ multiple_traits <- function(N, t_max) {
   output[output$generation == 1, ]$p <- tabulate(population$trait, nbins = N) / N  
 
   for (t in 2:t_max) {
-    # copy individuals to previous_population tibble
+    # Copy individuals to previous_population tibble
     previous_population <- population 
     
     # Randomly copy from previous generation
@@ -50,7 +50,7 @@ multiple_traits <- function(N, t_max) {
 }
 ```
 
-Finally, the function to plot the output is similar to what we have already done when plotting multiple runs. The one difference is that now the colored lines do not represent different runs, but different traits, as indicated below by `aes(colour = trait)`. The new line `theme(legend.position = "none")` simply tells ggplot to not include the legend in the graph, as it is not informative. It would just show 100 colors, one for each trait.
+Finally, the function to plot the output is similar to what we have already done when plotting multiple runs. The one difference is that now the colored lines do not represent different runs, but different traits, as indicated below by `aes(colour = trait)`. The new line `theme(legend.position = "none")` simply tells ggplot to not include the legend in the graph, as it is not informative. It would just show 100 or more colors, one for each trait.
 
 ```{r 7.4}
 plot_multiple_traits <- function(data_model) {
@@ -96,7 +96,7 @@ previous_population <- population
 population <- tibble(trait = sample(previous_population$trait, N, replace = TRUE))  
 # Identify the innovators
 innovators <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) 
-# if there are innovators
+# If there are innovators
 if( sum(innovators) > 0){ 
   # Replace innovators' traits with new traits
   population[innovators,]$trait <- (last_trait + 1):(last_trait + sum(innovators)) 
