@@ -237,8 +237,8 @@ multiple_traits_matrix <- function(N, t_max, mu) {
   output 
 }
 ```
-<!-- TO DO -->
-To plot the output, we re-convert it into a tibble so that it can be handled by `ggplot()`. We first create a column that explicitly indicates the number of generations, and then we use the function `pivot_longer()` from the tidyverse to reassemble the columns of the matrix in trait-frequency pairs, the 'tidy' format consisten with the functioning of ggplot.
+
+To plot the output, we re-convert it into a tibble so that it can be handled by `ggplot()`. We first create a column that explicitly indicates the number of generations, and then we use the function `pivot_longer()` from the tidyverse to reassemble the columns of the matrix in trait-frequency pairs, the 'tidy' format consistent with the functioning of ggplot.
 
 ```{r 7.15}
 plot_multiple_traits_matrix <- function(data_model) {
