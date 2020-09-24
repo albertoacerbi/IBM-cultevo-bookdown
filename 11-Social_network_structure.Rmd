@@ -8,9 +8,9 @@ In this chapter, we will cover the basics of social networks, how to create, ana
 Let us start with a small group of colleagues who see each other on a regular base in the office, some are friends, and some are not (sometimes the friendships might not even be reciprocal). For this example, we use gossip as socially transmitted information. Say, we want to better understand how gossip is spreading through this group. At the simplest level, we might assume that: any two colleagues will exchange gossip whenever they meet. This would reduce the group of colleagues to a well-mixed population, where information can flow freely. However, assume that gossip is only transmitted if two friends interact. Now we have a situation, where information flow is constrained by the underlying friendship network. To explore, how information can spread in that friendship network, we first need to find a way to represent it in R. One way to represent networks is an adjacency matrix, $A$. It is a square matrix where all possible dyadic interactions of individuals in a population are represented as entries in its rows ($i$) and columns ($j$). Commonly, rows indicate interacting individuals, and columns are individuals who are recipients of this interaction. For example:
 
 ```{r 11.1}
-m <- matrix(c(0,1,1, 0,0,1, 1,1,0), nrow=3, byrow=T)
-row.names(m) <- c("A","B","C")
-colnames(m) <- c("A","B","C")
+m <- matrix(c(0,1,1, 0,0,1, 1,1,0), nrow = 3, byrow = TRUE)
+row.names(m) <- c("A", "B", "C")
+colnames(m) <- c("A", "B", "C")
 m
 ```
 
@@ -35,7 +35,7 @@ Now let us turn back to our group of co-workers, and let us create a random frie
 
 ```{r 11.4}
 n <- 10
-adjm <- matrix(NA, ncol=n, nrow=n)
+adjm <- matrix(NA, ncol = n, nrow = n)
 adjm
 ```
 
@@ -46,7 +46,7 @@ friendshipRatio <- 0.5
 
 adjm[upper.tri(adjm)] <- sample(x = 0:1, 
                                 size = n*(n-1)/2, 
-                                replace = T, 
+                                replace = TRUE, 
                                 prob = c(1-friendshipRatio, friendshipRatio))
 adjm
 
@@ -78,29 +78,29 @@ set.seed(1)
 plot(net)
 ```
 
-This is the most basic network plot where each node (with the numbers 1 to `r n`) and their connections (edges/ties) are plotted such that nodes that receive more connections are more central and those that rec#eive less are more peripheral. Note, every time you plot the network, it will have a slightly different layout. If you would like to preserve the node positions you can uncomment the `set.seed()` function in the code chunk above.
+This is the most basic network plot where each node (with the numbers 1 to `r n`) and their connections (edges/ties) are plotted such that nodes that receive more connections are more central and those that receive less are more peripheral. Note, every time you plot the network, it will have a slightly different layout. If you would like to preserve the node positions you can uncomment the `set.seed()` function in the code chunk above.
 
 There are many ways to change the looks of network plots. The igraph manual is an ideal starting point to learn more about it. For example, we could plot nodes based on specific layout functions:
 
 ```{r 11.8, fig.cap="Example for two different network layouts, the grid and the ring."}
-par(mfrow=c(1,2))
-plot(net, layout=layout.grid(net), main="Grid layout")
-plot(net, layout=layout.circle(net), main="Ring layout")
+par(mfrow = c(1,2))
+plot(net, layout = layout.grid(net), main = "Grid layout")
+plot(net, layout = layout.circle(net), main = "Ring layout")
 ```
 
 Or we can directly change the size, and colour of nodes:
 
 ```{r 11.9, fig.cap="Using syling arguments with the `plot()` function allows to manipulate the appearence of vertices, edges, and labels."}
-par(mfrow=c(1,1))
+par(mfrow = c(1,1))
 set.seed(1)
 plot(net, 
-     vertex.color="dodgerblue", 
-     vertex.label.color="white",
-     vertex.size=20,
-     edge.color="black",
-     edge.width=1,
-     edge.arrow.size=0.5,
-     main="Default layout with styling")
+     vertex.color = "dodgerblue", 
+     vertex.label.color = "white",
+     vertex.size = 20,
+     edge.color = "black",
+     edge.width = 1,
+     edge.arrow.size = 0.5,
+     main = "Default layout with styling")
 ```
 
 In the previous example, we have changed the colour of the nodes' background and text, and their overall size (attributes starting with `vertex.`). We have also changed the colour of the edges, their width, and the size of the tips (attributes starting with `edge.`).
@@ -112,12 +112,12 @@ Let's say, we know the age of each individual and we would like to visualise age
 V(net)$age
 
 # Add an age attribute and randomly assign an age class
-V(net)$age <- sample(x=1:10, size=n, replace=T)
+V(net)$age <- sample(x = 1:10, size = n, replace = TRUE)
 
 # The network now has an age attribute
 V(net)$age
 
-V(net)$colour <- heat.colors(n=10,rev=T)[V(net)$age]
+V(net)$colour <- heat.colors(n = 10, rev = TRUE)[V(net)$age]
 
 net
 ```
@@ -127,12 +127,12 @@ The `net` object now has two attributes (one is called age, with numeric values,
 ```{r 11.11, fig.cap="In this plot we indicate a node's age by colouring the node with a different colour (pale yellow: younger, red: older)"}
 set.seed(1)
 plot(net, 
-     vertex.color=V(net)$colour, 
-     vertex.label.color="black",
-     vertex.size=20,
-     edge.color="black",
-     edge.width=1,
-     edge.arrow.size=0.5)
+     vertex.color = V(net)$colour, 
+     vertex.label.color = "black",
+     vertex.size = 20,
+     edge.color = "black",
+     edge.width = 1,
+     edge.arrow.size = 0.5)
 ```
 
 It can be useful to remove the labels from the nodes and reduce the node size, especially when the networks become large. Also, given that we have a symmetric network (all relationships are reciprocal), we can get rid of the arrow tips. We do this by telling igraph that the network is undirected.
@@ -141,11 +141,11 @@ It can be useful to remove the labels from the nodes and reduce the node size, e
 net <- as.undirected(net)
 set.seed(1)
 plot(net, 
-     vertex.color=V(net)$colour, 
-     vertex.label="",
-     vertex.size=9,
-     edge.width=1,
-     edge.arrow.size=0.5)
+     vertex.color = V(net)$colour, 
+     vertex.label = "",
+     vertex.size = 9,
+     edge.width = 1,
+     edge.arrow.size = 0.5)
 ```
 
 One final styling example. So far, we have the edges indicate the existence of friendship relationships, which is a binary quality. However, we can also imagine friendship as a continuous variable (from strong = 1 to none = 0). Using the edge function `E()`, we can add attributes to the edges in the network. We can use those to alter the width of edges depending on their relationship strength. To do that, we will first change the adjacency matrix (from binary to continuous values) and then plot the new network.
@@ -155,13 +155,13 @@ One final styling example. So far, we have the edges indicate the existence of f
 adjm2 <- adjm
 
 # draw random values from a uniform distribution and replace the matrix entries that have a value of 1
-adjm2[upper.tri(adjm2)] <- runif(n=sum(upper.tri(adjm2))) * adjm2[upper.tri(adjm2)]
+adjm2[upper.tri(adjm2)] <- runif(n = sum(upper.tri(adjm2))) * adjm2[upper.tri(adjm2)]
 
 # copy the mirror image to the lower triangle
 adjm2[lower.tri(adjm2)] <- t(adjm2)[lower.tri(adjm2)]
 
 # create the network
-net2 <- graph_from_adjacency_matrix(adjm2, weighted=TRUE, mode="undirected")
+net2 <- graph_from_adjacency_matrix(adjm2, weighted = TRUE, mode = "undirected")
 net2
 ```
 
@@ -172,11 +172,11 @@ V(net2)$age <- V(net)$age
 V(net2)$colour <- V(net)$colour
 
 plot(net2, 
-     vertex.color=V(net2)$colour,
-     vertex.label="",
-     vertex.size=9,
-     edge.width=E(net2)$weight*5,
-     edge.arrow.size=0.5)
+     vertex.color = V(net2)$colour,
+     vertex.label = "",
+     vertex.size = 9,
+     edge.width = E(net2)$weight*5,
+     edge.arrow.size = 0.5)
 ```
 
 You can now observe strong and weak relationships between individuals, their location relative to each other, and how they cluster. In the next section, we will try to quantify these observations.
@@ -197,7 +197,7 @@ E(net2)
 If our networks have attributes stored (for the vertices or edges), we can retrieve them with the following two functions: 
 ```{r 11.16}
 # vertex attributes
-get.vertex.attribute(graph=net2)
+get.vertex.attribute(graph = net2)
 
 # edge attributes
 get.edge.attribute(net2)
@@ -216,28 +216,28 @@ Let us now look at a variety of measures that we can calculate to characterise o
 
 **Diameter** is a measure for the longest (geodesic) path, i.e. the largest number of steps that are necessary to reach two vertices in a network (using `farthest_vertices()` we can return the ID of the two vertices).
 ```{r 11.18}
-diameter(graph=net)
+diameter(graph = net)
 ```
 
 **Average path length** is the average number of steps that need to be traversed between any two vertices (aka as dyad). We can also use the `distance()` function to return a distance matrix similar to the adjacency matrix.
 ```{r 11.19}
 # average distance between any dyad
-mean_distance(graph=net)
+mean_distance(graph = net)
 ```
 
 **Edge density** is the proportion of edges present in the graph relative to the number of possible edges (i.e. in a fully connected network with the same number of nodes).
 ```{r 11.20}
-edge_density(graph=net)
+edge_density(graph = net)
 ```
 
 **Reciprocity** (relevant for directed graphs only) calculates the proportion of mutual edges. As we have a directed graph, this value is one. 
 ```{r 11.21}
-reciprocity(graph=net)
+reciprocity(graph = net)
 ```
 
 **Clustering coefficient** (aka transitivity, or cliquishness) is the probability that the two neighbours of a vertex are neighbours of each other. This is also called a triangle, and often the image of 'my friends are friends with each other' is used.
 ```{r 11.22}
-transitivity(graph=net)
+transitivity(graph = net)
 ```
 
 
@@ -247,35 +247,35 @@ Additional to these high-level measures, we can use a series of node-level measu
 **Degree centrality** refers to the number of (incoming/outgoing/both) edges of a vertex. We can use the `degree()` function to determine the degree centrality of each node:
 ```{r 11.23}
 # number of edges that connected with each node
-degree(graph=net)
+degree(graph = net)
 
 # as we have an undirected network, the count of incoming and outgoing edges is identical
-identical(degree(graph=net, mode="in"), 
-          degree(graph=net, mode="out"))
+identical(degree(graph = net, mode = "in"), 
+          degree(graph = net, mode = "out"))
 
 # we can use the mean of all degree centralities as a general measure for the entire network
-mean(degree(graph=net))
+mean(degree(graph = net))
 ```
 
 **Strength** is similar to degree centrality but relevant for weighted networks. It is the sum of all adjacent edge weights (a node might have many edges but with very low weights and so with high degree centrality but low strength). In our case (unweighted network), `degree()` and `strength()` produce the same result:
 ```{r 11.24}
-sort(strength(graph=net))
+sort(strength(graph = net))
 ```
 
 **Closeness centrality** represents the number of steps it takes from a given vertex to any other vertex in the network. It is a measure for how long information on average takes to arrive at this node. 
 ```{r 11.25}
-closeness(graph=net)
+closeness(graph = net)
 ```
 Note that the values are $<$1. This is because `igraph` defines closeness centrality as 'the inverse of the average length of the shortest paths to/from all the other vertices in the graph.'
 
 **Betweenness centrality** is the number of shortest paths between nodes that pass through a particular node. It is often seen as a measure for a node's gatekeeping or brokerage potential:
 ```{r 11.26}
-betweenness(graph=net)
+betweenness(graph = net)
 ```
 
 **Eigenvector centrality** is the eigenvector of the adjacency matrix. Vertices with a high eigenvector centrality are connected to many individuals who are connected to many individuals, and so on (see also page rank, `page_rank()`, and authority, `authority_score()`, score functions).
 ```{r 11.27}
-eigen_centrality(graph=net)$vector
+eigen_centrality(graph = net)$vector
 ```
 
 ## Using social networks to model information transmission
@@ -284,33 +284,33 @@ Now that we know how to generate, plot, and analyse networks: how can we use the
 ### Gossip transmission on networked populations
 ```{r 11.28}
 # set up vector that stores whether an individual possesses the latest gossip:
-gossip_meter <- rep(F, n)
+gossip_meter <- rep(FALSE, n)
 gossip_meter
 
-# choose a random individual to start gossipping
-gossip_meter[sample(x=n, size=1)] <- T
+# choose a random individual to start gossiping
+gossip_meter[sample(x = n, size = 1)] <- TRUE
 gossip_meter
 
 # choose an individual with gossip
-if(sum(gossip_meter)==1){
+if(sum(gossip_meter) == 1){
   gossip_provider <- which(gossip_meter)
 } else {
-  gossip_provider <- sample(x=which(gossip_meter), size=1)
+  gossip_provider <- sample(x = which(gossip_meter), size = 1)
 }
 
 # choose a neighbour in the network
-neighbours <- which(adjm[gossip_provider,]==1)
+neighbours <- which(adjm[gossip_provider,] == 1)
 
 # only execute if there is a neighbour
-if(length(neighbours)>0){
+if(length(neighbours) > 0){
   # choose one neighbour if several are present
-  if(length(neighbours)==1){
+  if(length(neighbours) == 1){
     neighbour <- neighbours
   } else {
-    neighbour <- sample(x=neighbours, size=1)
+    neighbour <- sample(x = neighbours, size = 1)
   }
   # update gossip indicator of the neighbour
-  gossip_meter[neighbour] <- T
+  gossip_meter[neighbour] <- TRUE
 }
 gossip_meter
 ```
@@ -318,11 +318,11 @@ gossip_meter
 This is already sufficient to simulate the spread of gossip on a network. In the next step, let us loop over these instructions and record the number of time steps it takes until everyone received the gossip. But first, we should write a different `sample()` function, as the generic function misbehaves with samples of length equal to one. We will use the following: 
 
 ```{r 11.29}
-mySample <- function(x, prob=NULL){
-  if(length(x)==1){
+mySample <- function(x, prob = NULL){
+  if(length(x) == 1){
     return(x)
   } else {
-    return(sample(x=x, size=1, prob=prob))
+    return(sample(x = x, size = 1, prob = prob))
   }
 }
 ```
@@ -334,13 +334,13 @@ Now we can use this simpler version of the sampling function (which is directly 
 Turns <- 50
 
 # a matrix to record how many individuals have the gossip at time x
-res <- tibble(turn=1:Turns, gossipers=rep(0, Turns))
+res <- tibble(turn = 1:Turns, gossipers = rep(0, Turns))
 
 # set up gossip indicator
-gossip_meter <- rep(F, n)
+gossip_meter <- rep(FALSE, n)
 
 # choose a random individual to start gossipping
-gossip_meter[sample(x=n, size=1)] <- T
+gossip_meter[sample(x = n, size = 1)] <- TRUE
 
 for(turns in 1:Turns){
   res[turns,2] <- sum(gossip_meter)/n
@@ -348,14 +348,14 @@ for(turns in 1:Turns){
   gossip_provider <- mySample(which(gossip_meter))
   
   # choose a neighbour in the network
-  neighbours <- which(adjm[gossip_provider,]==1)
+  neighbours <- which(adjm[gossip_provider,] == 1)
   
   # only execute if there is a neighbour
-  if(length(neighbours)>0){
+  if(length(neighbours) > 0){
     # choose one neighbour ...
     neighbour <- mySample(neighbours)
     # and update its gossip indicator
-    gossip_meter[neighbour] <- T
+    gossip_meter[neighbour] <- TRUE
   }
 }
 
@@ -368,7 +368,7 @@ res$turn
 # plot result
 library(ggplot2)
 ggplot(res) + 
-  geom_line(aes(x=turn, y=gossipers)) +
+  geom_line(aes(x = turn, y = gossipers)) +
   ylab("prop. of pop. with gossip") +
   theme_bw()
 ```
@@ -376,27 +376,27 @@ ggplot(res) +
 Let us adapt the code so that we can run it repeatedly, to get a better feeling for the average amount of time it takes for the information to spread. 
 
 ```{r 11.31}
-gossip_model <- function(ADJM, TURNS, SIM=1){
+gossip_model_1 <- function(ADJM, TURNS, SIM = 1){
   n <- nrow(ADJM)
   # a matrix to record how many individuals have the gossip at time x
-  res <- tibble(turn=1:TURNS, gossipers=rep(0, TURNS))
+  res <- tibble(turn = 1:TURNS, gossipers = rep(0, TURNS))
   # set up gossip indicator
-  gossip_meter <- rep(F, n)
-  # choose a random individual to start gossipping
-  gossip_meter[sample(x=n, size=1)] <- T
+  gossip_meter <- rep(FALSE, n)
+  # choose a random individual to start gossiping
+  gossip_meter[sample(x = n, size = 1)] <- TRUE
   
   for(turns in 1:TURNS){
     res[turns,2] <- sum(gossip_meter)/n
     # choose an individual with gossip
     gossip_provider <- mySample(which(gossip_meter))
     # choose a neighbour in the network
-    neighbours <- which(ADJM[gossip_provider,]==1)
+    neighbours <- which(ADJM[gossip_provider,] == 1)
     # only execute if there is a neighbour
-    if(length(neighbours)>0){
+    if(length(neighbours) > 0){
       # choose one neighbour ...
       neighbour <- mySample(neighbours)
       # and update its gossip indicator
-      gossip_meter[neighbour] <- T
+      gossip_meter[neighbour] <- TRUE
     }
   }
   res$simulation <- SIM
@@ -408,13 +408,15 @@ With this function of our model, we can easily re-run the simulation several tim
 
 ```{r 11.32, cache=TRUE}
 data <- do.call("rbind", lapply(1:100, function(sim){
-  gossip_model(ADJM=adjm, TURNS=100, SIM=sim)
+  gossip_model_1(ADJM = adjm, TURNS = 100, SIM = sim)
 }))
 ```
 
+Here, we are using an additional new function, `do.call()`. This is a wrapper function that repeatedly applies a function to the individual elements of an object and then returns the result. In this case, we want to bind all the rows (therefore using `ribnd()`) of the list object that `lapply()` returns. `do.call()` takes the first list element and applies `rbind()` to it and the second element. In the next step it takes the resulting (now longer) data set and binds the rows of the next list element, and so on. After binding all the rows together, we can use the returned `data` object and plot it using `ggplot`. 
+
 ```{r 11.33, fig.cap="Repeated runs of the gossip simulation shows the asymptotic spread of gossip in a population."}
 ggplot(data) + 
-  geom_line(aes(x=turn, y=gossipers, group=simulation), alpha=.2) +
+  geom_line(aes(x = turn, y = gossipers, group = simulation), alpha = .2) +
   ylab("prop. of pop. with gossip") +
   theme_bw()
 ```
@@ -424,11 +426,11 @@ We can see that the initial spread is very fast and then tapers off. At the begi
 To make the creation of networks easier, let us write down a function to generate networks as we have done before:
 
 ```{r 11.34}
-createNetwork <- function(N, FRIENDSHIPRATIO){
-  adjm <- matrix(0, ncol=N, nrow=N)
+create_network <- function(N, FRIENDSHIPRATIO){
+  adjm <- matrix(0, ncol = N, nrow = N)
   adjm[upper.tri(adjm)] <- sample(x = 0:1, 
                                   size = N*(N-1)/2, 
-                                  replace = T, 
+                                  replace = TRUE, 
                                   prob = c(1-FRIENDSHIPRATIO, FRIENDSHIPRATIO))
   adjm[lower.tri(adjm)] <- t(adjm)[lower.tri(adjm)]
   return(adjm)
@@ -438,15 +440,16 @@ createNetwork <- function(N, FRIENDSHIPRATIO){
 Now we can create a fully connected network, run the gossip model on it, and plot the results:
 
 ```{r 11.35, cache=TRUE}
-adjm_full <- createNetwork(N=n, FRIENDSHIPRATIO=1)
+adjm_full <- create_network(N = n, FRIENDSHIPRATIO = 1)
 
 data_full <- do.call("rbind", 
                      lapply(1:100, function(sim){
-                       gossip_model(ADJM=adjm_full, TURNS=100, SIM=sim)
-                       }
-                       )
+                       gossip_model_1(ADJM = adjm_full, TURNS = 100, SIM = sim)
+                       })
                      )
 ```
+
+
 
 ```{r 11.36, fig.cap="Gossip spreads faster in a fully connected network, compared to a less connected network.", message=FALSE}
 data$type <- "colleague network"
@@ -454,8 +457,8 @@ data_full$type <- "fully connected"
 data_combined <- rbind(data, data_full)
 
 ggplot(data_combined) + 
-  geom_point(aes(x=turn, y=gossipers, color=type), alpha=.05) +
-  geom_smooth(aes(x=turn, y=gossipers, color=type)) +
+  geom_point(aes(x = turn, y = gossipers, color = type), alpha = .05) +
+  geom_smooth(aes(x = turn, y = gossipers, color = type)) +
   ylab("prop. of pop. with gossip") +
   theme_bw()
 ```
@@ -463,15 +466,15 @@ ggplot(data_combined) +
 This plot shows that the fully connected network reaches saturation a little bit faster than the colleague network. The difference becomes even more obvious when we re-run this simulation with larger networks:
 
 ```{r 11.37, cache=TRUE}
-adjm_colleagues <- createNetwork(N=25, FRIENDSHIPRATIO=.20)
-adjm_full <- createNetwork(N=25, FRIENDSHIPRATIO=1)
+adjm_colleagues <- create_network(N = 25, FRIENDSHIPRATIO = .20)
+adjm_full <- create_network(N = 25, FRIENDSHIPRATIO = 1)
 
 data_colleagues <- do.call("rbind", lapply(1:100, function(sim){
-  gossip_model(ADJM=adjm_colleagues, TURNS=100, SIM=sim)
+  gossip_model_1(ADJM = adjm_colleagues, TURNS = 100, SIM = sim)
 }))
 
 data_full <- do.call("rbind", lapply(1:100, function(sim){
-  gossip_model(ADJM=adjm_full, TURNS=100, SIM=sim)
+  gossip_model_1(ADJM = adjm_full, TURNS = 100, SIM = sim)
 }))
 ```
 
@@ -481,8 +484,8 @@ data_full$type <- "fully connected"
 data_combined2 <- rbind(data_full, data_colleagues)
 
 ggplot(data_combined2) + 
-  geom_point(aes(x=turn, y=gossipers, color=type), alpha=.05) +
-  geom_smooth(aes(x=turn, y=gossipers, color=type)) +
+  geom_point(aes(x = turn, y = gossipers, color = type), alpha = .05) +
+  geom_smooth(aes(x = turn, y = gossipers, color = type)) +
   ylab("prop. of pop. with gossip") +
   theme_bw()
 ```
@@ -495,12 +498,12 @@ While the previous example has shown us the difference in the transmission speed
 For this type of analysis we do not need to record each time step, instead, we can let our function return the time step at which, e.g. 75\% of the population have heard the gossip:
 
 ```{r 11.39}
-gossip_model <- function(ADJM, PROP, TURNS, SIM=1){
+gossip_model_2 <- function(ADJM, PROP, TURNS, SIM = 1){
   n <- nrow(ADJM)
   # set up gossip indicator
   gossip_meter <- rep(F, n)
   # choose a random individual to start gossipping
-  gossip_meter[sample(x=n, size=1)] <- T
+  gossip_meter[sample(x = n, size = 1)] <- TRUE
   
   timestep <- NA
   for(turns in 1:TURNS){
@@ -511,13 +514,13 @@ gossip_model <- function(ADJM, PROP, TURNS, SIM=1){
     # choose an individual with gossip
     gossip_provider <- mySample(which(gossip_meter))
     # choose a neighbour in the network
-    neighbours <- which(ADJM[gossip_provider,]==1)
+    neighbours <- which(ADJM[gossip_provider,] == 1)
     # only execute if there is a neighbour
     if(length(neighbours)>0){
       # choose one neighbour ...
       neighbour <- mySample(neighbours)
       # and update its gossip indicator
-      gossip_meter[neighbour] <- T
+      gossip_meter[neighbour] <- TRUE
     }
   }
   # if PROP is not reached, return the maximum value
@@ -531,24 +534,27 @@ gossip_model <- function(ADJM, PROP, TURNS, SIM=1){
 By default, this function will return the maximum turn number, if the set target proportion is not reached (however, we could also let the function return a different value or a character expression, such as `MAX`).
 
 ```{r 11.40}
-adjm <- createNetwork(N=50, FRIENDSHIPRATIO=.25)
-gossip_model(ADJM=adjm, PROP=.75, TURNS=100, SIM=1)
+adjm <- create_network(N = 50, FRIENDSHIPRATIO = .25)
+gossip_model_2(ADJM = adjm, PROP = .75, TURNS = 100, SIM = 1)
 ```
 When you run d
 
 Now, let us run these functions for different group sizes and different connectivities, and let us repeat these simulations several times to get a better estimate:
 
 ```{r 11.41, cache=TRUE}
-parameters <- expand.grid(groupSize=c(10,50),#c(10,30,50,70,90),
-                          reconnections=c(0,.01,.05,.1,.5,1),
-                          repetition=1:50)
+parameters <- expand.grid(groupSize = c(10,50),#c(10,30,50,70,90),
+                          reconnections = c(0,.01,.05,.1,.5,1),
+                          repetition = 1:50)
 tmp <- lapply(1:nrow(parameters), function(p){
-  net <- watts.strogatz.game(dim=1, size=parameters[p,"groupSize"], nei=2, p=parameters[p,"reconnections"], loops=F, multiple=F)
+  net <- watts.strogatz.game(dim = 1, size = parameters[p,"groupSize"], nei = 2, 
+                             p = parameters[p,"reconnections"], loops = FALSE, 
+                             multiple = FALSE)
   adjm <- get.adjacency(net)
-  model <- gossip_model(ADJM=adjm, PROP=.5, TURNS=500, SIM=parameters[p,"repetition"])
-  tibble(time=model, 
-             degree=mean(degree(net)), 
-             path=average.path.length(net))
+  model <- gossip_model_2(ADJM = adjm, PROP = .5, TURNS = 500, 
+                          SIM = parameters[p,"repetition"])
+  tibble(time = model, 
+             degree = mean(degree(net)), 
+             path = average.path.length(net))
 })
 
 tmp2 <- do.call("rbind", tmp)
@@ -561,9 +567,9 @@ To plot the average time of our repeated simulations, we need to first calculate
 library(tidyverse)
 parameters %>% 
   group_by(groupSize, reconnections) %>% 
-  summarise(meanTime=mean(time), 
-            meanDegree=mean(degree),
-            meanPath=mean(path)) -> data
+  summarise(meanTime = mean(time), 
+            meanDegree = mean(degree),
+            meanPath = mean(path)) -> data
 ```
 
 Let us have a look at both the average network degree and the average path length of the networks:
@@ -571,9 +577,9 @@ Let us have a look at both the average network degree and the average path lengt
 ```{r 11.43, fig.cap="Based on how small world networks are created, the average network degree remains unchanged even if the probability of reconnection increases. Note that we use the plotting function `geom_jitter()` which works just like `geom_point()` but is also adding a little y-axis jitter to the points so that we can see overlapping points."}
 parameters$groupSize <- factor(parameters$groupSize)
 
-ggplot(parameters, aes(x=reconnections, y=degree, col=groupSize)) + 
-  geom_jitter(height=.01, alpha=.5) +
-  scale_y_continuous(limits=c(3.5,4.5)) +
+ggplot(parameters, aes(x = reconnections, y = degree, col = groupSize)) + 
+  geom_jitter(height = .01, alpha = .5) +
+  scale_y_continuous(limits = c(3.5,4.5)) +
   xlab("prob. of reconnection") +
   ylab("average degree") +
   theme_bw()
@@ -582,7 +588,7 @@ ggplot(parameters, aes(x=reconnections, y=degree, col=groupSize)) +
 Note, the average network degree is constant at $k =$ `r mean(parameters$degree)`. This is due to the way Small World Networks are created. We start with a regular lattice network and then randomly select an edge and change the vertex on one end (e.g. from A--B to A--C). Thus, while some individuals might now have fewer (or even zero) edges and others might have more, the average number of edges and so the average degree remains fixed an independent of the number of rewired edges.
 
 ```{r 11.44, fig.cap="In larger populations average path length is longer when reconnection prbability is low. For smaller populations we do not see this effect at all."}
-ggplot(parameters, aes(x=reconnections, y=path, col=groupSize)) + 
+ggplot(parameters, aes(x = reconnections, y = path, col = groupSize)) + 
   geom_point() + 
   xlab("prob. of reconnection") +
   ylab("average path length") +
@@ -592,8 +598,8 @@ ggplot(parameters, aes(x=reconnections, y=path, col=groupSize)) +
 This, however, is not true for the path length. Instead, we find that larger networks (with otherwise the same network parameters) have longer average path lengths (i.e. it takes on average more steps to get from one to another individual). Also, as we increase the probability to reconnect edges average path length goes down. This is because random connections might connect distant sections of the network and so drastically lower the number of steps required to get from one individual to another. 
 
 ```{r 11.45, fig.cap="In larger populations, and especially in those with longer average path length, it takes longer for information to spread than in smaller populations or those with shorter average path length."}
-ggplot(parameters, aes(x=path, y=time, col=groupSize)) + 
-  geom_point(alpha=.33) + 
+ggplot(parameters, aes(x = path, y = time, col = groupSize)) + 
+  geom_point(alpha = .33) + 
   xlab("average path length") +
   ylab("time") +
   theme_bw()
@@ -609,12 +615,12 @@ The spread of information is not only affected by the network shape but also by 
 Let us start with a model of simple contagoin (requires only one social contact that possesses a new beahviour or information to acquire it):
 
 ```{r 11.46, cache=TRUE}
-informationSpread <- function(ADJM, MODE="simple", ROUNDS=100, CONTACTS=1){
+informationSpread <- function(ADJM, MODE = "simple", ROUNDS = 100, CONTACTS = 1){
   N <- nrow(ADJM)
   
   # set up behaviour
   behaviour <- rep(F, N)
-  behaviour[sample(N,size=10)] <- T
+  behaviour[sample(N,size = 10)] <- TRUE
   
   # recording data
   fraction <- rep(0, ROUNDS)
@@ -625,30 +631,30 @@ informationSpread <- function(ADJM, MODE="simple", ROUNDS=100, CONTACTS=1){
     fraction[round] <- sum(behaviour)/N
     
     # pick random individual
-    focal <- sample(x=N, size=1)
+    focal <- sample(x = N, size = 1)
     # who are its neighbours
     neigh <- adjm[focal, ] == 1
     
     if(sum(behaviour[neigh]) >= CONTACTS){
-      behaviour[focal] <- T
+      behaviour[focal] <- TRUE
     }
     
   }
-  return(tibble(mode=MODE, 
-                frac=fraction, 
-                round=1:ROUNDS))
+  return(tibble(mode = MODE, 
+                frac = fraction, 
+                round = 1:ROUNDS))
 }
 
 # Simulations with clustered (lattice) networks
-net <- watts.strogatz.game(size=10, dim=2, nei=2, p=.01)
+net <- watts.strogatz.game(size = 10, dim = 2, nei = 2, p = .01)
 adjm <- as.matrix(get.adjacency(net))
-clu <- informationSpread(ADJM=adjm, MODE="simple", ROUNDS=1000, CONTACTS=1)
+clu <- informationSpread(ADJM = adjm, MODE = "simple", ROUNDS = 1000, CONTACTS = 1)
 clu$network <- "clustered"
 
 # Simulations with random (small world) networks
-net2 <- erdos.renyi.game(n=100, p.or.m=600, type="gnm", directed=F, loops=F)
+net2 <- erdos.renyi.game(n = 100, p.or.m = 600, type = "gnm", directed = FALSE, loops = FALSE)
 adjm2 <- as.matrix(get.adjacency(net2))
-rand <- informationSpread(ADJM=adjm2, MODE="simple", ROUNDS=1000, CONTACTS=1)
+rand <- informationSpread(ADJM = adjm2, MODE = "simple", ROUNDS = 1000, CONTACTS = 1)
 rand$network <- "random"
 
 res <- rbind(clu, rand)
@@ -657,7 +663,7 @@ res <- rbind(clu, rand)
 
 ```{r 11.461, fig.cap="When information spreads in a simple contagion manner, we find only small differences spread in clustered and random networks. In both cases information spreads quickly at first and then slows down as the population reaches saturation."}
 ggplot(res) + 
-  geom_line(aes(x=round, y=frac, col=network, linetype=mode), size=.9) + 
+  geom_line(aes(x = round, y = frac, col = network, linetype = mode), size = .9) + 
   theme_bw()
 ```
 
@@ -665,11 +671,11 @@ For the simple contagion case we find very little difference between the two net
 
 ```{r 11.47, cache=TRUE}
 # for repeated interactions 
-informationSpread <- function(NET, MODE="simple", ROUNDS=100, CONTACTS=1){
-  if(NET=="clustered"){
-    net <- watts.strogatz.game(size=10, dim=2, nei=2, p=.01, loops=F, multiple=F)
-  } else if(NET=="random"){
-    net <- erdos.renyi.game(n=100, p.or.m=600, type="gnm", directed=F, loops=F)
+informationSpread <- function(NET, MODE = "simple", ROUNDS = 100, CONTACTS = 1){
+  if(NET == "clustered"){
+    net <- watts.strogatz.game(size = 10, dim = 2, nei = 2, p = .01, loops = FALSE, multiple = FALSE)
+  } else if(NET == "random"){
+    net <- erdos.renyi.game(n = 100, p.or.m = 600, type = "gnm", directed = FALSE, loops = FALSE)
   }
  adjm <- as.matrix(get.adjacency(net)) 
  
@@ -677,7 +683,7 @@ informationSpread <- function(NET, MODE="simple", ROUNDS=100, CONTACTS=1){
   
   # set up behaviour
   behaviour <- rep(F, N)
-  behaviour[sample(N,size=10)] <- T
+  behaviour[sample(N,size = 10)] <- TRUE
   
   # recording data
   fraction <- rep(0, ROUNDS)
@@ -688,19 +694,19 @@ informationSpread <- function(NET, MODE="simple", ROUNDS=100, CONTACTS=1){
     fraction[round] <- sum(behaviour)/N
     
     # pick random individual
-    focal <- sample(x=N, size=1)
+    focal <- sample(x = N, size = 1)
     # who are its neighbours
     neigh <- adjm[focal, ] == 1
     
     if(sum(behaviour[neigh]) >= CONTACTS){
-      behaviour[focal] <- T
+      behaviour[focal] <- TRUE
     }
     
   }
-  return(tibble(network=NET, 
-                mode=MODE, 
-                frac=fraction, 
-                round=1:ROUNDS))
+  return(tibble(network = NET, 
+                mode = MODE, 
+                frac = fraction, 
+                round = 1:ROUNDS))
 }
 
 # repeated runs
@@ -708,13 +714,21 @@ reps <- 10
 
 # simulte complex and simple contagion for clustered networks
 set.seed(11)
-clu_simple <- do.call("rbind", lapply(1:reps, function(x) informationSpread(NET="clustered", ROUNDS=1000, CONTACTS=1, MODE="simple")))
-clu_comp <- do.call("rbind", lapply(1:reps, function(x) informationSpread(NET="clustered", ROUNDS=1000, CONTACTS=4, MODE="complex")))
+clu_simple <- do.call("rbind", 
+                      lapply(1:reps, function(x) informationSpread(NET = "clustered", 
+                                     ROUNDS = 1000, CONTACTS = 1, MODE = "simple")))
+clu_comp <- do.call("rbind", 
+                    lapply(1:reps, function(x) informationSpread(NET = "clustered", 
+                                     ROUNDS = 1000, CONTACTS = 4, MODE = "complex")))
 clu <- rbind(clu_simple, clu_comp)
 
 # simulte complex and simple contagion for random networks
-rand_simple <- do.call("rbind", lapply(1:reps, function(x) informationSpread(NET="random", ROUNDS=1000, CONTACTS=1, MODE="simple")))
-rand_comp <- do.call("rbind", lapply(1:reps, function(x) informationSpread(NET="random", ROUNDS=1000, CONTACTS=4, MODE="complex")))
+rand_simple <- do.call("rbind", 
+                       lapply(1:reps, function(x) informationSpread(NET = "random", 
+                                      ROUNDS = 1000, CONTACTS = 1, MODE = "simple")))
+rand_comp <- do.call("rbind", 
+                     lapply(1:reps, function(x) informationSpread(NET = "random", 
+                                      ROUNDS = 1000, CONTACTS = 4, MODE = "complex")))
 rand <- rbind(rand_simple, rand_comp)
 
 # combine results
@@ -723,7 +737,8 @@ res <- rbind(clu, rand)
 
 ```{r 11.48, fig.cap="While we find almost no difference in the spread of information between clustered and random networks when information is spread in a simple contagion manner, there are larger differences when the spread follows complex contagion dynamics. Here, we find faster spread of information in clustered networks. ", message=FALSE}
 ggplot(res) + 
-  stat_smooth(aes(x=round, y=frac, col=network, linetype=mode), size=.9, se=T) +
+  stat_smooth(aes(x = round, y = frac, col = network, 
+                  linetype = mode), size = .9, se = T) +
   ylab("Proportion of individuals with information") +
   xlab("Round") + 
   theme_bw()

@@ -12,7 +12,7 @@ We will start very simply with one large population where individuals acquire a 
 n <- 100
 b <- 2
 
-behaviours <- sample(x=b, size=n, replace=TRUE)
+behaviours <- sample(x = b, size = n, replace = TRUE)
 behaviours[1:10]
 table(behaviours)
 ```
@@ -23,11 +23,11 @@ Everyone in our population is constantly exhibiting their behaviour. Occasionall
 
 ```{r 12.2}
 t <- 1000
-recbehav <- matrix(NA, nrow=t, ncol=b)
+recbehav <- matrix(NA, nrow = t, ncol = b)
 
 for(timestep in 1:t){
   # choose a random observer and a random individual to observe 
-  observer_model <- sample(x=n, size=2, replace=F)
+  observer_model <- sample(x = n, size = 2, replace = FALSE)
   # let observer acquire trait from model
   behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
   # record the frequency of each trait in each timestep
@@ -44,21 +44,21 @@ recbehav_d <- melt(recbehav)
 colnames(recbehav_d) <- c("time", "behaviour","freq")
 
 ggplot(recbehav_d) + 
-  geom_line(aes(x=time, y=freq/n, col=factor(behaviour))) + 
-  scale_y_continuous(limits=c(0,1)) + 
+  geom_line(aes(x = time, y = freq/n, col = factor(behaviour))) + 
+  scale_y_continuous(limits = c(0,1)) + 
   theme_bw()
 ```
 
-As we would have expected from an unbiased transmission, the frequency of the two traits will move around $0.5$. For smaller populations, more traits, or longer time drift will lead to the exclusion of one of the traits. We can test this by using a much smaller population. To do so, let us first wrap the simulation in a function called `migrationModel()`. 
+As we would have expected from an unbiased transmission, the frequency of the two traits will move around $0.5$. For smaller populations, more traits, or longer time drift will lead to the exclusion of one of the traits. We can test this by using a much smaller population. To do so, let us first wrap the simulation in a function called `migration_model_1()`. 
 
 ```{r 12.4}
-migrationModel <- function(POPSIZE, NBEHAVIOUR, NTIMESTEPS){
-  behaviours <- sample(x=NBEHAVIOUR, size=POPSIZE, replace=TRUE)
-  recbehav <- matrix(NA, nrow=NTIMESTEPS, ncol=NBEHAVIOUR)
+migration_model_1 <- function(POPSIZE, NBEHAVIOUR, NTIMESTEPS){
+  behaviours <- sample(x = NBEHAVIOUR, size = POPSIZE, replace = TRUE)
+  recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NBEHAVIOUR)
   
   for(timestep in 1:NTIMESTEPS){
     # choose a random observer and a random individual to observe 
-    observer_model <- sample(x=POPSIZE, size=2, replace=F)
+    observer_model <- sample(x = POPSIZE, size = 2, replace = F)
     # let observer acquire trait from model
     behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
     recbehav[timestep,] <- as.numeric(table(behaviours)) / POPSIZE
@@ -72,15 +72,15 @@ The function makes it easy to quickly run simulations with different input param
 ```{r 12.5, fig.cap="In smaller populations (here, $N=20$), drift might lead to the sudden exclusion of one of the two behaviours from the group, such that the other behaviour becomes fixed."}
 # run simulation
 set.seed(3)
-res <- migrationModel(POPSIZE=20, NBEHAVIOUR=2, NTIMESTEPS=1000)
+res <- migration_model_1(POPSIZE = 20, NBEHAVIOUR = 2, NTIMESTEPS = 1000)
 # turn results matrix into long format
 recbehav_d <- melt(res)
 # add descriptive column names
 colnames(recbehav_d) <- c("time", "behaviour","freq")
 # plot results
 ggplot(recbehav_d) + 
-  geom_line(aes(x=time, y=freq, col=factor(behaviour))) + 
-  scale_y_continuous(limits=c(0,1)) + 
+  geom_line(aes(x = time, y = freq, col = factor(behaviour))) + 
+  scale_y_continuous(limits = c(0,1)) + 
   theme_bw()
 ```
 
@@ -91,20 +91,20 @@ As we can see, the two behaviours meander until, by chance, behaviour $1$ is com
 Now let us assume that the population we are looking at divided into two sub-populations, here `clusters`. We will keep track which individual belongs to which cluster and then record the frequency of one of the behaviours, $p$, (the frequency of the other behaviour, $q$, is simply $1-p$) in each cluster. Also, note that cluster size $n$ is the same for all clusters.
 
 ```{r 12.6, fig.cap="The frequency of one out of two behaviours in two sub-populations will fluctuate around 0.5 if individuals are equally likely to learn from individuals in both sub-populations (or clusters)."}
-migrationModel <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
+migration_model_2 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
   totalpop <- NPOP*POPSIZE
-  cluster <- sample(x=NPOP, size=totalpop, replace=TRUE)
-  behaviours <- sample(x=NBEHAVIOUR, size=totalpop, replace=TRUE)
-  recbehav <- matrix(NA, nrow=NTIMESTEPS, ncol=NPOP)
+  cluster <- sample(x = NPOP, size = totalpop, replace = TRUE)
+  behaviours <- sample(x = NBEHAVIOUR, size = totalpop, replace = TRUE)
+  recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NPOP)
   
   for(timestep in 1:NTIMESTEPS){
     # choose a random observer and a random individual to observe 
-    observer_model <- sample(x=totalpop, size=2, replace=F)
+    observer_model <- sample(x = totalpop, size = 2, replace = F)
     # let observer acquire trait from model
     behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
     # record the relative frequency of behaviour 1 for each cluster
     recbehav[timestep,] <- unlist(lapply(1:NPOP, function(x) 
-                              sum(behaviours[cluster==x]==1) / sum(cluster==x)
+                              sum(behaviours[cluster == x] == 1) / sum(cluster == x)
                             ))
   }
   
@@ -115,12 +115,12 @@ migrationModel <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
 
 # run simulation
 set.seed(4)
-res <- migrationModel(NPOP=2, POPSIZE=100, NBEHAVIOUR=2, NTIMESTEPS=1000)
+res <- migration_model_2(NPOP = 2, POPSIZE = 100, NBEHAVIOUR = 2, NTIMESTEPS = 1000)
 
 # plot results
 ggplot(res) + 
-  geom_line(aes(x=time, y=freq, col=factor(cluster))) + 
-  scale_y_continuous(limits=c(0,1)) + 
+  geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
+  scale_y_continuous(limits = c(0,1)) + 
   ylab("Relative frequency of behaviour 1") + 
   theme_bw()
 ```
@@ -130,24 +130,24 @@ Running this code repeatedly will show you two things. First, on average the fre
 What would happen if members of a cluster preferentially learn from others within their cluster? This might be the case where individuals spent most of their time in their sub-populations. To make sure that we choose an observer and a model from the same cluster we can use the `prob` argument in the `sample()`. This argument gives a weight (or probability) with which an element of a provided set is chosen. By default, each element has a weight of $1$ and thus is equally likely to be selected. To limit our scope to individuals within the same cluster, we can simply set the weight to $0$ for all individuals that are in a different cluster. And so, we first select a cluster and then choose two individuals from that cluster to be our observer and model. We will add an `if` statement to make sure that there are at least two individuals in the cluster:
 
 ```{r 12.7, fig.cap="When individuals copy behaviours only from individuals within their own sub-population, we find that the frequency of behaviour 1 becomes uncorrelated between the two sub-populations. In this example, behaviour 1 is lost in cluster 2, whereas it is still present in cluster 1 at the end of the simulation."}
-migrationModel <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
+migration_model_3 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
   totalpop <- NPOP*POPSIZE
-  cluster <- sample(x=NPOP, size=totalpop, replace=TRUE)
-  behaviours <- sample(x=NBEHAVIOUR, size=totalpop, replace=TRUE)
-  recbehav <- matrix(NA, nrow=NTIMESTEPS, ncol=NPOP)
+  cluster <- sample(x = NPOP, size = totalpop, replace = TRUE)
+  behaviours <- sample(x = NBEHAVIOUR, size = totalpop, replace = TRUE)
+  recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NPOP)
   
   for(timestep in 1:NTIMESTEPS){
     # choose a random cluster
     clusterid <- sample(NPOP, 1)
     # if there are at least two individuals in this cluster
-    if(sum(cluster==clusterid)>1){
+    if(sum(cluster == clusterid)>1){
       # choose a random observer and a random individual to observe within the same cluster 
-      observer_model <- sample(x=totalpop, size=2, replace=F, 
-                               prob=(cluster==clusterid)*1)
+      observer_model <- sample(x = totalpop, size = 2, replace = F, 
+                               prob = (cluster == clusterid)*1)
       behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
     }
     recbehav[timestep,] <- unlist(lapply(1:NPOP, function(x) 
-      sum( behaviours[cluster==x]==1 ) / sum(cluster==x)))
+      sum( behaviours[cluster == x] == 1 ) / sum(cluster == x)))
   }
   
   recbehav_d <- melt(recbehav)
@@ -156,10 +156,10 @@ migrationModel <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
 }
 
 set.seed(20)
-res <- migrationModel(NPOP=2, POPSIZE=50, NBEHAVIOUR=2, NTIMESTEPS=1000)
+res <- migration_model_3(NPOP = 2, POPSIZE = 50, NBEHAVIOUR = 2, NTIMESTEPS = 1000)
 ggplot(res) + 
-  geom_line(aes(x=time, y=freq, col=factor(cluster))) + 
-  scale_y_continuous(limits=c(0,1)) + 
+  geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
+  scale_y_continuous(limits = c(0,1)) + 
   ylab("Relative frequency of behaviour 1") + 
   theme_bw()
 ```
@@ -167,21 +167,21 @@ ggplot(res) +
 When we run this simulation repeatedly, you will see that sometimes one of the behaviours gets lost in one, both, or neither of the clusters. Because in this iteration of our simulation there are no interactions between individuals of different clusters, we are essentially simulating two independent populations. You can see that this is the case when we start the simulation monomorphic clusters, i.e. all individuals in a cluster start with the same behaviour:
 
 ```{r 12.8, fig.cap="When two sub-populations start out fully saturated with one of two different behaviours and if there is no learning between clusters, the intial frequencies will remain unchanged."}
-migrationModel <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
+migration_model_4 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
   totalpop <- NPOP*POPSIZE
-  behaviours <- rep(sample(NBEHAVIOUR,size=NPOP,replace=T), each=POPSIZE)
-  cluster <- rep(1:NPOP, each=POPSIZE)
-  recbehav <- matrix(NA, nrow=NTIMESTEPS, ncol=NPOP)
+  behaviours <- rep(sample(NBEHAVIOUR,size = NPOP, replace = TRUE), each = POPSIZE)
+  cluster <- rep(1:NPOP, each = POPSIZE)
+  recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NPOP)
   
   for(timestep in 1:NTIMESTEPS){
     clusterid <- sample(NPOP, 1)
-    if(sum(cluster==clusterid)>1){
-      observer_model <- sample(x=totalpop, size=2, replace=F, 
-                               prob=(cluster==clusterid)*1)
+    if(sum(cluster == clusterid)>1){
+      observer_model <- sample(x = totalpop, size = 2, replace = FALSE, 
+                               prob = (cluster == clusterid)*1)
       behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
     }
     recbehav[timestep,] <- unlist(lapply(1:NPOP, function(x) 
-      sum( behaviours[cluster==x]==1 ) / sum(cluster==x)))
+      sum( behaviours[cluster == x] == 1 ) / sum(cluster == x)))
   }
   
   recbehav_d <- melt(recbehav)
@@ -190,10 +190,10 @@ migrationModel <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
 }
 
 set.seed(1)
-res <- migrationModel(NPOP=2, POPSIZE=50, NBEHAVIOUR=2, NTIMESTEPS=100)
+res <- migration_model_4(NPOP = 2, POPSIZE = 50, NBEHAVIOUR = 2, NTIMESTEPS = 100)
 ggplot(res) + 
-  geom_line(aes(x=time, y=freq, col=factor(cluster))) + 
-  scale_y_continuous(limits=c(0,1)) + 
+  geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
+  scale_y_continuous(limits = c(0,1)) + 
   ylab("Relative frequency of behaviour 1") + 
   theme_bw()
 ```
@@ -208,16 +208,16 @@ In the next step, we can add migration to our model. In the context of our model
 To model (physical) migration, we will add the migration probability $\mu$ to the model (where $0$ means no migration, and $1$ means that an individual will always choose to move to another group):
 
 ```{r 12.9}
-migrationModel <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS, MIGRATION){
+migration_model_5 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS, MIGRATION){
   totalpop <- NPOP*POPSIZE
-  behaviours <- rep(sample(NBEHAVIOUR,size=NPOP,replace=T), each=POPSIZE)
-  cluster <- rep(1:NPOP, each=POPSIZE)
-  recbehav <- matrix(NA, nrow=NTIMESTEPS, ncol=NPOP)
+  behaviours <- rep(sample(NBEHAVIOUR,size = NPOP,replace = TRUE), each = POPSIZE)
+  cluster <- rep(1:NPOP, each = POPSIZE)
+  recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NPOP)
   for(timestep in 1:NTIMESTEPS){
     clusterid <- sample(NPOP, 1)
-    if(sum(cluster==clusterid)>1){
-      observer_model <- sample(x=totalpop, size=2, replace=F, 
-                               prob=(cluster==clusterid)*1)
+    if(sum(cluster == clusterid)>1){
+      observer_model <- sample(x = totalpop, size = 2, replace = FALSE, 
+                               prob = (cluster == clusterid)*1)
       behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
     }
     # migration to another cluster
@@ -225,7 +225,7 @@ migrationModel <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS, MIGRATION){
       cluster[ observer_model[1] ] <- sample((1:NPOP)[-clusterid], 1)
     }
     recbehav[timestep,] <- unlist(lapply(1:NPOP, function(x) 
-      sum( behaviours[cluster==x]==1 ) / sum(cluster==x)))
+      sum( behaviours[cluster == x] == 1 ) / sum(cluster == x)))
   }
   
   recbehav_d <- melt(recbehav)
@@ -239,10 +239,11 @@ The migration code chunk is doing three things. First, we make sure that migrati
 Setting $\mu=0$ will recover the previous results, where the clusters behave independently:
 
 ```{r 12.10, fig.cap="Without migration between clusters, there is no learning outside a sub-population, and so initial behaviour frequencies remain unchanged."}
-res <- migrationModel(NPOP=4, POPSIZE=100, NBEHAVIOUR=2, NTIMESTEPS=1000, MIGRATION=0)
+res <- migration_model_5(NPOP = 4, POPSIZE = 100, NBEHAVIOUR = 2, 
+                      NTIMESTEPS = 1000, MIGRATION = 0)
 ggplot(res) + 
-  geom_line(aes(x=time, y=freq, col=factor(cluster))) + 
-  scale_y_continuous(limits=c(0,1)) + 
+  geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
+  scale_y_continuous(limits = c(0,1)) + 
   ylab("Relative frequency of behaviour 1") + 
   theme_bw()
 ```
@@ -251,10 +252,11 @@ Setting $\mu=1$, we find that the frequency of the behaviours become correlated 
 
 ```{r 12.11, fig.cap="When migration is highest, the frequency of behaviour 1 starts to flucutate around 0.5."}
 set.seed(2)
-res <- migrationModel(NPOP=4, POPSIZE=100, NBEHAVIOUR=2, NTIMESTEPS=1000, MIGRATION=1)
+res <- migration_model_5(NPOP = 4, POPSIZE = 100, NBEHAVIOUR = 2, 
+                      NTIMESTEPS = 1000, MIGRATION = 1)
 ggplot(res) + 
-  geom_line(aes(x=time, y=freq, col=factor(cluster))) + 
-  scale_y_continuous(limits=c(0,1)) + 
+  geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
+  scale_y_continuous(limits = c(0,1)) + 
   ylab("Relative frequency of behaviour 1") + 
   theme_bw()
 ```
@@ -263,10 +265,11 @@ For rare migration, we can find occasional changes in the frequency but it usual
 
 ```{r 12.12, fig.cap="When migration is rare, the frequency of behaviour 1 changes occassionally but quickly bounes back to the original value in the sub-population."}
 set.seed(1)
-res <- migrationModel(NPOP=4, POPSIZE=100, NBEHAVIOUR=2, NTIMESTEPS=1000, MIGRATION=0.01)
+res <- migration_model_5(NPOP = 4, POPSIZE = 100, NBEHAVIOUR = 2, 
+                      NTIMESTEPS = 1000, MIGRATION = 0.01)
 ggplot(res) + 
-  geom_line(aes(x=time, y=freq, col=factor(cluster))) + 
-  scale_y_continuous(limits=c(0,1)) + 
+  geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
+  scale_y_continuous(limits = c(0,1)) + 
   ylab("Relative frequency of behaviour 1") + 
   theme_bw()
 ```
@@ -280,16 +283,17 @@ set.seed(1)
 repeatedRun <- do.call("rbind", 
   lapply(1:100, function(run){
     # run individual simulation
-    res <- migrationModel(NPOP=2, POPSIZE=100, NBEHAVIOUR=2, NTIMESTEPS=1000, MIGRATION=.05)
+    res <- migration_model_5(NPOP = 2, POPSIZE = 100, NBEHAVIOUR = 2, 
+                          NTIMESTEPS = 1000, MIGRATION = .05)
     # return only the frequency for each cluster at the last time step
-    resLast <- res[res[,"time"]==max(res[,"time"]),"freq"]
+    resLast <- res[res[,"time"] == max(res[,"time"]),"freq"]
     return(resLast)
   })
   )
 
 # plot results
 ggplot(as.data.frame(repeatedRun)) + 
-  geom_point(aes(x=V1, y=V2)) + 
+  geom_point(aes(x = V1, y = V2)) + 
   xlab("Frequency in cluster 1") + 
   ylab("Frequency in cluster 2") + 
   theme_bw()
@@ -303,19 +307,19 @@ The plot shows four possible outcomes of these simulations. In the extreme case,
 Let us modify the code so that the simulation runs repeatedly and at the end returns the analysed results. 
 
 ```{r 12.14}
-migrationModelAnalysed <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS, MIGRATION, REPETITIONS){
+migration_model_analysed <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS, MIGRATION, REPETITIONS){
   totalpop <- NPOP*POPSIZE
-  recbehavFreq <- matrix(NA, ncol=NPOP, nrow=REPETITIONS)
+  recbehavFreq <- matrix(NA, ncol = NPOP, nrow = REPETITIONS)
   # run repeated independent simulations
 #ALTERNATIVLEY USE LAPPLY FUNCTION HERE!!:
   for(repetitions in 1:REPETITIONS){
-    behaviours <- rep(sample(NBEHAVIOUR,size=NPOP,replace=T), each=POPSIZE)
-    cluster <- rep(sample(NPOP), each=POPSIZE)
+    behaviours <- rep(sample(NBEHAVIOUR, size = NPOP, replace = TRUE), each = POPSIZE)
+    cluster <- rep(sample(NPOP), each = POPSIZE)
     for(timestep in 1:NTIMESTEPS){
       clusterid <- sample(NPOP, 1)
-      if(sum(cluster==clusterid)>1){
-        observer_model <- sample(x=totalpop, size=2, replace=F, 
-                                 prob=(cluster==clusterid)*1)
+      if(sum(cluster == clusterid) > 1){
+        observer_model <- sample(x = totalpop, size = 2, replace = FALSE, 
+                                 prob = (cluster == clusterid)*1)
         behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
       }
       if((runif(1,0,1) <= MIGRATION) & (NPOP > 1)){
@@ -323,37 +327,39 @@ migrationModelAnalysed <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS, MIGRAT
       }
     }
     recbehavFreq[repetitions, ] <- unlist(lapply(1:NPOP, function(x) 
-      sum( behaviours[cluster==x]==1 ) / sum(cluster==x))) 
+      sum( behaviours[cluster == x] == 1 ) / sum(cluster == x))) 
   }
 
   return(
-  data.frame(migration=MIGRATION, 
-             absdiff  = (abs(recbehavFreq[,1]-recbehavFreq[,2])))
+  tibble(migration = MIGRATION,
+         absdiff  = (abs(recbehavFreq[,1]-recbehavFreq[,2])))
   )
 }
 ```
 
 ```{r 12.15}
-migrationModelAnalysed(NPOP=2, POPSIZE=50, NBEHAVIOUR=2, NTIMESTEPS=1000, MIGRATION=.05, REPETITIONS=5)
+migration_model_analysed(NPOP = 2, POPSIZE = 50, NBEHAVIOUR = 2, 
+                       NTIMESTEPS = 1000, MIGRATION = .05, REPETITIONS = 5)
 ```
 
 As you can see, for some simulations these differences can be quite large, whereas in some the difference is zero. This will be the case where both populations randomly started monomorphic for the same behaviour, or where they ended up in that state. 
 
-Using our `migrationModelAnalysed()` function we can easily run this simulation for various different migration rates and several repetitions:
+Using our `migration_model_analysed()` function we can easily run this simulation for various different migration rates and several repetitions:
 
 ```{r 12.16, cache=TRUE}
 set.seed(2)
 repeatedRun <- do.call("rbind",
-  lapply(seq(from=0, to=1, by=0.05), function(migration){
-    migrationModelAnalysed(NPOP=2, POPSIZE=50, NBEHAVIOUR=2, NTIMESTEPS=10000, MIGRATION=migration, REPETITIONS=20)
+  lapply(seq(from = 0, to = 1, by = 0.05), function(migration){
+    migration_model_analysed(NPOP = 2, POPSIZE = 50, NBEHAVIOUR = 2, 
+                           NTIMESTEPS = 10000, MIGRATION = migration, REPETITIONS = 20)
   })
   )
 ```
 
 ```{r 12.17, fig.cap="As migration rate increases sub-populations become increasingly similar in the frequency of behaviours.", message=FALSE}
 ggplot(repeatedRun) + 
-  geom_point(aes(x=migration, y=absdiff)) +
-  geom_smooth(aes(x=migration, y=absdiff)) +
+  geom_point(aes(x = migration, y = absdiff)) +
+  geom_smooth(aes(x = migration, y = absdiff)) +
   xlab("Migration rate") + 
   ylab("Average frequency difference between clusters") + 
   theme_bw()
@@ -377,11 +383,11 @@ So far, an individual is changing its behaviour based on observing one other ind
 
 To achieve this behaviour we can change the `observer_model` selection part of our model and change it to:
 ```{r, eval=FALSE}
-if(sum(cluster==clusterid)>m){
-  observer_model <- sample(x=totalpop, size=m+1, replace=F,
-                           prob=(cluster==clusterid)*1)
+if(sum(cluster == clusterid)>m){
+  observer_model <- sample(x = totalpop, size = m+1, replace = FALSE,
+                           prob = (cluster == clusterid)*1)
   behaviours[ observer_model[1] ] <-
-    behaviours[ sample(observer_model[2:(m+1)], size=1) ]
+    behaviours[ sample(observer_model[2:(m+1)], size = 1) ]
 }
 ```
 where $m$ is the number of models to observe. (Note, due to the peculiarities of the `sample()` function this code only works for $m>1$).
@@ -392,17 +398,17 @@ Another extension of those model would be to have individuals not actually (phys
 
 To do this, we would again make changes to the `observer_model` selection part of the code. We would now choose the cluster ID for the model and the observer independently.
 ```{r, eval=FALSE}
-if(runif(n=1,min=0,max=1) < alpha){
+if(runif(n = 1,min = 0,max = 1) < alpha){
   # learn from a different cluster
-  if(any(cluster==clusterid) & any(cluster!=clusterid)){
-    observer_model <- c(sample(x=totalpop, size=1, prob=(cluster==clusterid)*1),
-                        sample(x=totalpop, size=1, prob=(cluster!=clusterid)*1))
+  if(any(cluster == clusterid) & any(cluster != clusterid)){
+    observer_model <- c(sample(x = totalpop, size = 1, prob = (cluster == clusterid)*1),
+                        sample(x = totalpop, size = 1, prob = (cluster != clusterid)*1))
   }
 } else {
   # learn from same cluster
-  if(sum(cluster==clusterid)>1){
-    observer_model <- sample(x=totalpop, size=2, replace=F,
-                             prob=(cluster==clusterid)*1)
+  if(sum(cluster == clusterid)>1){
+    observer_model <- sample(x = totalpop, size = 2, replace = FALSE,
+                             prob = (cluster == clusterid)*1)
   }
 }
 behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
@@ -415,13 +421,13 @@ Finally, this model can be extended to accommodate different population structur
 
 For this iteration of the base model, we need to change the `migration` section. Instead of choosing randomly among other clusters, we would provide a probability vector to the `sample()` function that reflects the probabilities to move from one to another sub-population. As an example, let us assume we are looking at three sub-populations $\{A, B, C\}$. A simple structure is a line, where $A$ is connected with $B$ and $B$ is connected with $C$, or `A--B, B--C`. We can use an adjacency matrix to describe the probability to move from one sub-population to another:
 ```{r}
-adj <- matrix(c(0,1,0,  1,1,1,  0,1,0), nrow=3)
+adj <- matrix(c(0,1,0,  1,1,1,  0,1,0), nrow = 3)
 adj
 ```
 If rows are the starting and columns the destiny sub-populations, then this matrix tells us that an individual in sub-population $A$ (first row) can move to $B$ (second column entry is a one) but not to $C$ (last column entry is a zero). Now, when we determine that an individual is moving to a different group, we can simply recall the correct row of the `adj` matrix based on the individual's `clusterid`:
 ```{r, eval=FALSE}
 if((runif(1,0,1) <= MIGRATION) & (NPOP > 1)){
-  cluster[ observer_model[1] ] <- sample((1:NPOP), size=1, prob=adj[clusterid,])
+  cluster[ observer_model[1] ] <- sample((1:NPOP), size = 1, prob = adj[clusterid,])
 }
 ```
 Also, this piece of code allows us to use non-binary values, where small values represent a low probability to move from one to another sub-population, and asymmetric matrices where the probability going from $A$ to $B$ can be different from the probability for the reverse movement. 
