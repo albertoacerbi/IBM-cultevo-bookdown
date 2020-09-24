@@ -31,45 +31,48 @@ Given this simple way of representing a "world" of compatibilities among traits,
 
 ```{r 15.2}
 traits_inter_dependence <- function(N, t_max, k, mu, p_death, world){
-  output <- tibble(trait = rep(c("A","B","C","D"), each = t_max), generation = rep(1:t_max, 4), p = as.numeric(rep(NA, t_max * 4)))      
+  output <- tibble(trait = rep(c("A","B","C","D"), each = t_max), 
+                   generation = rep(1:t_max, 4), 
+                   p = as.numeric(rep(NA, t_max * 4)))    
+  
   population <- matrix(0, ncol = 4, nrow = N)
+  
   output[output$generation == 1 ,]$p <- colSums(population) / N
+  
   for(t in 2:t_max){
-    # innovations
+    
+    # Innovations
     innovators <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) 
     innovations <- sample(1:4, sum(innovators), replace = TRUE)
     population[cbind(which(innovators == TRUE), innovations)] <- 1
     
-    # copying
+    # Copying
     demonstrators <- sample(1:N, replace = TRUE)
     demonstrators_traits <- sample(1:4, N, replace = TRUE)
     
-    # not sure how to vectorise the code below. The first "if" can be done with:
-    # population[cbind(demonstrators,demonstrators_traits)]==1 as in previous chapter
-    # but I could not figure out a way to calculate the compatibility score at population level
-    # MS: I can't come up with a faster version either.
-    
     for(i in 1:N){
       if(population[demonstrators[i], demonstrators_traits[i]]){
-        compatibility_score <- sum(world[demonstrators_traits[i], population[i,]!=0])
+        compatibility_score <- sum(world[demonstrators_traits[i], population[i, ] != 0])
         copy <- (1 / (1 + exp(-k*compatibility_score))) > runif(1)
         population[i,demonstrators_traits[i]] <- 1 * copy
       }
     }
     
-    # birth/death
+    # Birth/death
     replace <- sample(c(TRUE, FALSE), N, prob = c(p_death, 1 - p_death), replace = TRUE)
     population[replace, ] <- 0
     
+    # Output
     output[output$generation == t ,]$p <- colSums(population) / N
   }
+  # Export data from function
   output
 }
 ```
 
-As in the [previous chapter][Social learning of social learning rules], the simulation starts with no traits, and individuals introduce them with random innovations, the rate of which is regulated by the parameter $\mu$. Individuals are replaced by culturally-naive newborns with a probability $p_\text{death}$. There are, two major differences to the previous model. One is that the function accepts a parameter, `world`, a four-by-four matrix of compatibilities between traits (thus the compatibilities can change, but not the actual number of traits). The second is in the copying procedure. 
+As in the [previous chapter][Social learning of social learning rules], the simulation starts with no traits, and individuals introduce them with random innovations, the rate of which is regulated by the parameter $\mu$. Individuals are replaced by culturally-naive newborns with a probability $p_\text{death}$. There are two major differences from the previous model. One is that the function accepts a parameter, called `world`, a four-by-four matrix of compatibilities between traits (thus the compatibilities can change, but not the actual number of traits). The second is in the copying procedure. 
 
-As in the previous chapter, one trait is randomly selected to be observed from a demonstrator and, if the demonstrator *i* has it (`population[demonstrators[i], demonstrators_traits[i]]`), we calculate the "compatibility score". The compatibility score is the sum of the compatibilities of all the traits of the observer towards the traits of the demonstrator, using the "world" matrix. If, for example, both observer and demonstrator have A and B (and only A and B), the compatibility would be $2$, if the observer has A and B and the demonstrator C and D, the compatibility would be $-2$ and so on. In the next line, the compatibility score is transformed in the actual probability to copy with a logistic function. This is a useful trick to transform possibly unbounded positive and negative values to be between $0$ and $1$:
+As in the previous chapter, one trait is randomly selected to be observed from a demonstrator and, if the demonstrator *i* has it (`population[demonstrators[i], demonstrators_traits[i]]`), we calculate the "compatibility score". The compatibility score is the sum of the compatibilities of all the traits of the observer towards the traits of the demonstrator, using the `world` matrix. If, for example, both observer and demonstrator have A and B (and only A and B), the compatibility would be $2$, if the observer has A and B and the demonstrator C and D, the compatibility would be $-2$ and so on. In the next line, the compatibility score is transformed in the actual probability to copy with a logistic function. This is a useful trick to transform possibly unbounded positive and negative values to be between $0$ and $1$:
 
 $$P_\text{copy} = \frac{1}{1 + e^{-kC}}         \hspace{30 mm}(15.1)$$
 where *C* represents the compatibility score between observer and demonstrator, and *k* is a parameter of the simulation, that controls the steepness of the logistic curve, i.e. how fast positive values of the compatibility score produce a probability to copy equal to $1$, and negative values a probability equal to $0$.
@@ -88,14 +91,15 @@ plot_multiple_traits <- function(data_model) {
 
 ```{r 15.4, fig.cap = "Frequency of traits in a world with four traits and pairwise compatibilities."}
 my_world <- matrix(c(1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,1), nrow = 4, ncol = 4)
-data_model <- traits_inter_dependence(N = 100, t_max = 1000, k = 10, mu = 0.0005, p_death = 0.01, world = my_world)
+data_model <- traits_inter_dependence(N = 100, t_max = 1000, k = 10, 
+                                      mu = 0.0005, p_death = 0.01, world = my_world)
 plot_multiple_traits(data_model)
 ```
 
 In the great majority of the runs, two out of the four traits diffuse in the population. We can check whether these are in fact one of the couple of compatible traits, having a look at the last line of the output produced by the simulation. 
 
 ```{r 15.5}
-data_model[data_model$generation==1000,]
+data_model[data_model$generation==1000, ]
 ```
 
 Depending on random factors, the successful traits will be A and B or C and D. If you run the simulation again and again you would see that in around half of the simulations A and B are the successful traits, and in another half C and D are, and very few other possible cases with this "world" of compatibilities. 
@@ -104,7 +108,8 @@ What happens if we change the world? We can run a new simulation where the trait
 
 ```{r 15.6, fig.cap = "Frequency of traits in a world with four traits and three traits compatibile with each other, but not compatible with the fourth."}
 my_world <- matrix(c(1,1,1,-1, 1,1,1,-1,1,1,1,-1,-1,-1,-1,1), nrow = 4, ncol = 4)
-data_model <- traits_inter_dependence(N = 100, t_max = 1000, k = 10, mu = 0.0005, p_death = 0.01, world = my_world)
+data_model <- traits_inter_dependence(N = 100, t_max = 1000, k = 10, 
+                                      mu = 0.0005, p_death = 0.01, world = my_world)
 plot_multiple_traits(data_model)
 ```
 
@@ -114,11 +119,10 @@ Not surprisingly, if all traits are compatible, they all spread equally in the p
 
 ```{r 15.7, fig.cap = "Frequency of traits in a world with four traits all compatibles with each other."}
 my_world <- matrix(c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1), nrow = 4, ncol = 4)
-data_model <- traits_inter_dependence(N = 100, t_max = 1000, k = 10, mu = 0.0005, p_death = 0.01, world = my_world)
+data_model <- traits_inter_dependence(N = 100, t_max = 1000, k = 10, 
+                                      mu = 0.0005, p_death = 0.01, world = my_world)
 plot_multiple_traits(data_model)
 ```
-
-Notice that the opposite---when none of the traits is compatible with each other---is an extreme case that produces a situation similar to the [unbiased transmission model with multiple traits][Multiple traits models] we explored earlier in the book. Note, that individuals will almost only copy once in their life when they do not have any trait. At this time, they copy whatever trait they observe with 50% chance, since the logistically transformed compatibility score of $0$ will always yield $0.5$. Subsequently, any encounter with ademonstrators with other traits will result in a very low copying probability, whereas any encounter with a demonstrator with the same trait will lead to a high copying probability, however, the observer already possesses that trait. 
 
 ## Many-traits model
 
@@ -147,22 +151,25 @@ The function to run the simulation is very similar to the previous one, once we 
 ```{r 15.10}
 traits_inter_dependence_2 <- function(N, M, t_max, k, mu, p_death, gamma){
   output <- matrix(data = NA, nrow = t_max, ncol = M)
-  # initalise the traits' world:
+  
+  # Initialise the traits' world
   world <- matrix( rep(1, M * M), nrow = M)
   compatibilities <- sample(c(1, -1), choose(M,2), prob = c(gamma, 1 - gamma), replace = TRUE) 
   world[upper.tri(world)] <- compatibilities
   world <- t(world)
   world[upper.tri(world)] <- compatibilities
-  # initialise the population:
+  
+  # Initialise the population
   population <- matrix(0, ncol = M, nrow = N)
   output[1, ] <- colSums(population) / N 
+  
   for(t in 2:t_max){
-    # innovations
+    # Innovations
     innovators <- sample(c(TRUE, FALSE), N, prob = c(mu, 1 - mu), replace = TRUE) 
     innovations <- sample(1:M, sum(innovators), replace = TRUE)
     population[cbind(which(innovators == TRUE), innovations)] <- 1
     
-    # copying
+    # Copying
     demonstrators <- sample(1:N, replace = TRUE)
     demonstrators_traits <- sample(1:M, N, replace = TRUE)
 
@@ -176,12 +183,14 @@ traits_inter_dependence_2 <- function(N, M, t_max, k, mu, p_death, gamma){
       }
     }
     
-    # birth/death
+    # Birth/death
     replace <- sample(c(TRUE, FALSE), N, prob = c(p_death, 1 - p_death), replace = TRUE)
     population[replace, ] <- 0
-    
+  
+    # Write output
     output[t, ] <- colSums(population) / N
   }
+  # Export data from function
   output
 }  
 ```
@@ -205,7 +214,8 @@ plot_multiple_traits_matrix <- function(data_model) {
 We can now use the `plot_multiple_traits_matrix()` function (see [chapter 7][Multiple traits models]) to visualise the model results. Let's have a look at what happens when we have 20 traits and an intermediate probability of compatibility.
 
 ```{r 15.12, warning = FALSE, fig.cap = "Frequency of traits in a world with 20 traits and compatiblity randomly generated. Each trait has 50% of probability of being compatible with each other trait."}
-data_model <- traits_inter_dependence_2(N = 100, M = 20, t_max = 2000, k = 10, mu = 0.001, p_death = 0.01, gamma = .5)
+data_model <- traits_inter_dependence_2(N = 100, M = 20, t_max = 2000, k = 10,
+                                        mu = 0.001, p_death = 0.01, gamma = .5)
 plot_multiple_traits_matrix(data_model)
 ```
 
@@ -214,7 +224,8 @@ The simulation generates a complex dynamic in which some of the traits spread in
 Let's change $\gamma$ to be $1$, i.e. when all traits are compatible with each other.
 
 ```{r 15.13, warning = FALSE, fig.cap = "Frequency of traits in a world with 20 traits and compatiblity randomly generated. Each trait is compatible with all other traits."}
-data_model <- traits_inter_dependence_2(N = 100, M = 20, t_max = 2000, k = 10, mu = 0.001, p_death = 0.01, gamma = 1)
+data_model <- traits_inter_dependence_2(N = 100, M = 20, t_max = 2000, k = 10, 
+                                        mu = 0.001, p_death = 0.01, gamma = 1)
 plot_multiple_traits_matrix(data_model)
 ```
 
@@ -224,15 +235,20 @@ We leave to the reader to explore further what drives the dynamic, especially in
 
 As an example, we can try to confirm the intuition that the final number of traits depends on the value of $\gamma$: if it is more likely that traits are compatible with each other, we expect more traits to spread in the population. We can choose values of $\gamma$ between $0$ and $1$ (with steps of $0.1$), and use a `for` cycle to run our function for each value. In fact, we are running another `for` cycle within the main one, as to have more runs for each value of $\gamma$ (an alternative would be to rewrite the function `traits_inter_dependence_2()` to accept an additional argument that indicates the number of simulation repetitions, as we did in previous chapters). 
 
-Finally, we store the number of successful traits at the end of the simulation, that is, the traits that spread in at least half of the population (`data_model[2000,]>.5`).
+Finally, we store the number of "successful" traits at the end of the simulation, that is, the traits that spread in at least half of the population (`data_model[2000,]>.5`).
 
 ```{r 15.14}
 r_max = 10
-test_inter_dependence <- tibble(gamma = as.factor(rep(seq(0, 1, by = .1), r_max)), run = as.factor(rep(1:r_max, each = 11)), C = as.numeric(NA))
+test_inter_dependence <- tibble(gamma = as.factor(rep(seq(0, 1, by = .1), r_max)), 
+                                run = as.factor(rep(1:r_max, each = 11)), 
+                                C = as.numeric(NA))
 for(condition in seq(0, 1, by = .1)){
   for(r in 1:r_max) {
-    data_model <- traits_inter_dependence_2(N = 100, M = 20, t_max = 2000, k = 10, mu = 0.001, p_death = 0.01, gamma = condition)
-    test_inter_dependence[test_inter_dependence$gamma == condition & test_inter_dependence$run == r, ]$C <- sum(data_model[2000,]>.5)
+    data_model <- traits_inter_dependence_2(N = 100, M = 20, t_max = 2000, k = 10, 
+                                            mu = 0.001, p_death = 0.01, gamma = condition)
+    test_inter_dependence[test_inter_dependence$gamma == condition & 
+                            test_inter_dependence$run == r, ]$C <- 
+      sum(data_model[2000,]>.5)
   }
 }
 ```
