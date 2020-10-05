@@ -5,21 +5,25 @@
 
 *In the previous chapters, we have looked at the transmission of information between individuals. We have seen that relatively simple mechanisms at the individual level can lead to population-level outcomes (e.g. the fixation of a rare cultural trait). We have also seen the importance of the characteristics of individuals (e.g. for success and prestige bias) in cultural processes. What we have not yet looked at is how the characteristics of the population may affect the outcome of cultural dynamics. In the following three chapters we will have a closer look at how: population size (demography), population structure (social networks), and group structured populations (with migration) can influence cultural evolution.*
 
+## Background on demography-mediated cultural loss
+
 Why would demography matter to cultural evolution? As long as information is transmitted among individuals and between generations, the size of the population should not play a role. In theory, this statement is true but it relies on a crucial assumption: information transfer is not only complete (all information from the previous generation is transmitted to the next generation) but also error-free. However, from many lab experiments, we know that copying information is an error-prone process. In this chapter, we will look at how those errors affect information accumulation and how population size is augmenting this process. 
 
 Several studies have looked at population effects. @shennan_demography_2015 provide a good overview of a variety of approaches and questions. For example, in their model, @ghirlanda_sustainability_2010, investigate the interplay between cultural innovations and cultural loss. While it would be trivial to say that culture accumulates where the rate of cultural innovation is higher than the rate of cultural loss, this model allows for two additional complicating mechanisms: (1) it lets innovations affect carrying capacity (and so the number of innovators), and (2) it allows trait corruption (i.e. a trait that was adaptive before can become maladaptive later, e.g. because it allows the over-exploitation of a resource). 
 
 Another well-known study is that by Joseph @henrich_demography_2004. His model takes inspiration from the archaeological record of Tasmania, which shows a deterioration of some and the persistence of other cultural traits after Tasmania was cut-off from Australia at the end of the last ice age. Henrich develops a compelling analytical model to show that the same adaptive processes in cultural evolution can result in the improvement and retention of simple skills but also the deterioration and even loss of complex skills. In the following section we will take a closer look at this model.
 
-## Background on demography-mediated cultural loss
+## The Tasmania Case model
 
-The principle idea of this model is the following: information transmission from one generation to another (or from one individual to another, here it does not make a difference) has a random component (error rate) that will lead to most individuals failing to achieve the same skill level (denoted with $z$) as their cultural model, whereas a few will match and - even fewer - exceed that skill level. Imagine a group of students who try to acquire the skills to manufacture a spear. As imitation is imperfect, and memorising and recalling action sequences is error-prone some students will end up with a spear that is inferior to the one of their cultural model. A few individuals might achieve a similar or even higher skill level than their cultural model. These 'new masters' will become the cultural models of the next generation. Fig. \@ref(fig:henrichGumbel) is showing this principle. 
+The principle idea of Henrich's model is the following: information transmission from one generation to another (or from one individual to another, here it does not make a difference) has a random component (error rate) that will lead to most individuals failing to achieve the same skill level (denoted with $z$) as their cultural model, whereas a few will match and - even fewer - exceed that skill level. Imagine a group of students who try to acquire the skills to manufacture a spear. As imitation is imperfect, and memorising and recalling action sequences is error-prone some students will end up with a spear that is inferior to the one of their cultural model. A few individuals might achieve a similar or even higher skill level than their cultural model. Fig. \@ref(fig:henrichGumbel) is showing this principle. 
 
-```{r henrichGumbel, fig.cap="Shown are the probability distributions to acquire a specific skill level for two different skills (one that is easy to learn and one that is more complex and therefore harder to learn). Given that learning is error-prone more individuals will acquire a skill level that is lower than that of a cultural model (its level is indicated by the vertical dashed line) through imitation (left of the dashed line). A few individauls will achieve higher skill levels (right of the dashed line). For the complex skill the probability to be above the skill level of the cultural model is lower (smaller area under the curve) than for simple skills.", message=FALSE, warning=FALSE}
+To simulate imperfect imitation, Henrich's model uses random values from a Gumbel distribution. This distribution is commonly used to model the distribution of extreme (here maximum proficiency) values. Its shape is controlled by two parameters: $\mu$ (location) and $\sigma>0$ (scale, sometimes also denoted as $\beta$). Varying $\mu$ affects how tricky it is to acquire a given skill. If we subtract an amount $\alpha$ from $\mu$ we move the distribution to the left, and so fewer individuals will acquire a skill level that is larger than that of the cultural model. The larger $\alpha$ the harder it is to acquire a given skill. Varying $\sigma$ on the other hand affects the width of the distribution, and so whether imitators make very similar or systematic mistakes (small $\sigma$, narrow distribution) or whether errors are very different from each other (large $\sigma$, wide distribution). By using different values for $\alpha$ and $\sigma$, we can simulate different skill complexity and imperfect imitation. Intuitively, whether the average skill level of a population increases, persists, or decreases depends on how likely it is that some imitators will achieve a skill that exceeds the current cultural model. Additional to the skill complexity, this also depends on how many individuals try to imitate the skill (how many values are drawn from the distribution). The smaller the pool of imitators, the fewer individuals will achieve a higher skill level and so, over time the skill level will decrease. Henrich provides an analytical model to explain how societies below a critical size (of cultural learners) might lose complex (or even simple) cultural traits over time. We will attempt to re-create his results using an individual-based model. 
+
+```{r henrichGumbel, fig.cap="Shown are the probability distributions to acquire a specific skill level (z, x-axis) for two different skills (a simple one that is easy to learn, and a compelx one that is harder to learn). Given that learning is error-prone more individuals will acquire a skill level that is lower than that of a cultural model (its level is indicated by the vertical dashed line) through imitation (left of the dashed line). A few individauls will achieve higher skill levels (right of the dashed line). For the complex skill the probability to be above the skill level of the cultural model is lower (smaller area under the curve) than for simple skills. For simple trait $\\alpha=-5$ and $\\sigma=3$ and for complex skill $\\alpha=-9$ and $\\sigma=2$.", message=FALSE, warning=FALSE, echo=FALSE}
 library(extraDistr)
 library(tidyverse)
 data <- tibble(skill = rep(c("simple","complex"), each = 6000),
-                   z = c(rgumbel(n = 6000, mu = -7, sigma = 2),
+                   z = c(rgumbel(n = 6000, mu = -5, sigma = 3),
                          rgumbel(n = 6000, mu = -9, sigma = 2)))
 ggplot(data, aes(x = z, col = skill)) +
   geom_density() + 
@@ -29,79 +33,85 @@ ggplot(data, aes(x = z, col = skill)) +
   ylab("probability imitatior acquires z") 
 ```
 
-Given that the new skill level is essentially drawn from a probability distribution around the value of the individual that is imitated, the new average skill value of the population will not only depend on how frequent and severe copying errors are (that is, how skewed the distribution is to the right) but also on how many individuals try to imitate. The smaller the pool of imitators, the fewer individuals will achieve a higher skill level and so, over time the skill will deteriorate. Henrich provides an analytical model to explain how societies below a critical size (of cultural learners) might lose complex (or even simple) cultural traits over time. We will attempt to re-create his results using an individual-based model. 
 
-## The Tasmania Case model
+### Modelling the Tasmania Case
 
-We begin with a very simple learning loop. We have a population of $N=1000$ individuals, each with a skill level $z$ for a particular skill (which we initiate with random values drawn from a uniform distribution, $U(0,1)$). The average skill level is $\bar{z}$. We want to calculate what the new average skill level is after all individuals attempt to imitate the most successful individual (the one where $z$ is the largest). Each individual then receives a new $z$-value that is drawn from a Gumbel distribution (which we can get from the `extraDistr` package). This distribution is controlled by two values, $\mu$ (location) and $\beta$ (scale). To model imperfect imitation, we can vary $\beta$ and we can subtract an amount $\alpha$ from $\mu$. If learning was perfect $\alpha$ and $\beta$ would be zero. If something is easy to learn, $\alpha$ is small (and large if it is hard to learn). If people make very similar mistakes, $\beta$ is small (and large if people make widely different mistakes). Once we have drawn new values for $z$, we calculate the average change in $z$, $\Delta \bar{z}$, and then replace the original $z$-values to restart the loop. 
+Our model looks like this: we simulate a population with $N$ individuals. Each individual has a skill level $z$. In each round, we determine the highest skill level in the population, $z_{\text{max}}$. We will then draw new values of $z$ for each individual in the population. We draw these values from Gumbel distribution where the new mean is the same as the skill level of the most skilled individual minus $\alpha$, i.e. $\mu = z_{\text{max}} - \alpha$. To keep tack of the simulation we will store the average proficiency $\bar z$ and the change in average proficiency $\Delta \bar z$. 
+
+We begin by loading the packages we will need. We will load the `extraDistr` package that gives us access to the `rgumbel()` function, which draws random values from a Gumbel distribution. We will have to define the shape of the distribution by providing two values, $\mu$ (location) and $\sigma$ (scale). 
+
+Next, we set the variables that we need to run the simulation, that is, population size `N`, a vector to store the skill level `z` for each individual, the number of simulation turns `t_max`, and the reporting variables `z_bar` and `z_delta_bar` for average skill level and the change of the average skill level respectively. 
+
+Finally, we write down a very basic learning loop. The first step in this `for()` loop is to draw new values of `z` and store them in `z_new`. We then calculate the mean of the new skill levels and the change compared to the previous time step, and finally update all values stored in `z`.
+
 
 ```{r 10.2, cache = TRUE}
-Rounds <- 5000
+library(tidyverse)
+library(extraDistr)
+
+# set population size
 N <- 1000
-f <- rep(NA, N)
-z <- runif(n = N, min = 0, max = 1)
-zbar <- rep(NA, Rounds)
-zmean <- rep(NA, Rounds)
+# draw random values from a uniform distribution to initialise z
+z <- rep(1, N)
+# set number of simulation rounds
+t_max <- 5000
+# set up variable to store average z
+z_bar <- rep(NA, t_max)
+# set up variable to store change in average z
+z_delta_bar <- rep(NA, t_max)
 
-beta <- 1
-alpha <- 7
+# set parameters for Gumbel distribution
+sigma <- 3
+alpha <- -5
 
-for(r in 1:Rounds){
-  # update f (use this for perfect identification of most skilful individual)
-  f <- as.numeric(z == max(z))
-  
-  # choose who to observe
-  obs <- sample(x = 1:N, prob = f, replace = TRUE)
-    
+for(r in 1:t_max){
   # calculate new z
-  znew <- rgumbel(n = N, mu = z[obs] - alpha, sigma = beta)
-  
-  # record average change in z
-  zbar[r] <- mean(znew - z)
+  z_new <- rgumbel(n = N, mu = max(z) + alpha, sigma = sigma)
   # record average skill level
-  zmean[r] <- mean(znew)
-      
+  z_bar[r] <- mean(z_new)
+  # record average change in z
+  z_delta_bar[r] <- mean(z_new - z)
   # update z
-  z <- znew
+  z <- z_new
 }
 ```
 
-With the above code we can run this simple simulation (for $5000$ rounds). 
+Let us now plot the result of this simulation run: 
 
 ```{r 10.3, fig.cap="While $\\bar z$ is sometimes above and sometimes below $0$, it is on average postive (dashed line), which indicated that the average skill level of the population increases."}
-zbar_val <- tibble(x = 1:length(zbar), y = zbar)
-ggplot(zbar_val) + 
+z_delta_bar_val <- tibble(x = 1:length(z_delta_bar), y = z_delta_bar)
+ggplot(z_delta_bar_val) + 
   geom_line(aes(x = x, y = y)) +
   xlab("time") +
   ylab("change in z") +
-  geom_hline(yintercept = mean(zbar_val$y), col = "grey", linetype = 2) +
+  geom_hline(yintercept = mean(z_delta_bar_val$y), col = "grey", linetype = 2) +
   theme_bw()
 ```
 
-We find that $\Delta \bar z$ quickly plateaus at about `r round(mean(zbar),1)` (grey dashed line). As this is $>0$, on average the population will improve its skill over time. That this is the case can be seen when we plot the average skill level:
+We find that $\Delta \bar z$ quickly plateaus at about `r round(mean(z_delta_bar),1)` (grey dashed line). As this is $>0$, on average the population will improve its skill over time. We can see that this is the case when we plot the average skill level over time:
 
-```{r 10.4, fig.cap="For the given parameter ($\\alpha=7$, $\\beta=1$) the average skill-level increases continously."}
-zmean_val <- tibble(x = 1:length(zmean), y = zmean)
-ggplot(zmean_val) + 
+```{r 10.4, fig.cap="For the given parameter ($\\alpha=7$, $\\sigma=1$) the average skill-level increases continously."}
+z_bar_val <- tibble(x = 1:length(z_bar), y = z_bar)
+ggplot(z_bar_val) + 
   geom_line(aes(x = x, y = y)) +
   xlab("time") +
   ylab("average skill-level") +
   theme_bw()
 ```
 
-Let us now write a function that can perform this loop repeatedly and average $\Delta \bar z$ over all those repetitions to receive a more stable result. 
+As in the previous chapters, we can now write a wrapper function that allows us to execute this model repeatedly and for different parameters. 
 
 ```{r 10.5}
-demography_model <- function(R, N, alpha, beta, repeats){
-  res <- lapply(1:repeats, function(REPS){
-    z <- runif(n = N, min = 0, max = 1)
-    zbar <- rep(NA, R)
-    for(r in 1:R){
-      znew <- rgumbel(n = N, mu = max(z) - alpha, sigma = beta)
-      zbar[r] <- mean(znew - z)
-      z <- znew
+demography_model <- function(T_MAX, N, ALPHA, SIGMA, R_MAX){
+  res <- lapply(1:R_MAX, function(repeats){
+    z <- rep(1, N)
+    z_delta_bar <- rep(NA, T_MAX)
+    for(turn in 1:T_MAX){
+      z_new <- rgumbel(n = N, mu = max(z) + ALPHA, sigma = SIGMA)
+      z_delta_bar[turn] <- mean(z_new - z)
+      z <- z_new
     }
-    return(mean(zbar))
+    return(mean(z_delta_bar))
   })
   mean(unlist(res))
 }
@@ -109,25 +119,25 @@ demography_model <- function(R, N, alpha, beta, repeats){
 
 In the code above, we use a new function, `lapply()`. There is a series of apply functions in the R programming language that 'apply' a function to a given data structure. Generally, these functions take an argument `X` (a vector or a list of elements) and then apply a function `FUN` to all elements. In our case, we want to execute our simulation $r$ times (whereby $r$ stands for the number of repetitions). Alternatively, we could use an outer `for` loop (over all repetitions, `reps`) around the inner `for` loop (over all rounds `R`). The problem with this latter approach is that nested loops (like any looped execution) happen sequentially. Thus, the third repetition of our simulation will not be executed before the first and the second simulation have completed. With an apply function, each simulation can be executed independent from each other (using parallel computing) and so speeding up the calculation. We initiate the `lapply()` function with a vector (here, `1:reps`), which indicates the number individual runs. Then we define the function that we want to execute. We need to make sure to return the averaged $\bar z$ at the end of the function. The `lapply()` function then returns a list of all $\bar z$ values. To calculate the average across all of these values, we first need to turn the `list` back into a vector, which we can do using the `unlist()` function. 
 
-With the `demography_model()` function, we can easily run our simulation repeatedly for a single set of parameters (e.g. by running `demography_model(R = 5000, N = 1000, alpha = 7, beta = 1, repeats = 10)`). 
+With the `demography_model()` function, we can easily run our simulation repeatedly for a single set of parameters (e.g. by running `demography_model(R = 5000, N = 1000, alpha = 7, sigma = 1, repeats = 10)`). 
 
-In the next step, let us use the function to run simulations for different population sizes, as well as for two different skill complexities: simple ($\alpha/\beta=7$) and complex ($\alpha/\beta=9$). 
+In the next step, let us use the function to run simulations for different population sizes, as well as for two different skill complexities: simple ($\alpha/\sigma=7$) and complex ($\alpha/\sigma=9$). 
 
 ```{r 10.6, cache = TRUE}
 sizes <- c(2, seq(100,6100,by = 250))
-res <- lapply(sizes, demography_model, R = 200, alpha = 7, beta = 1, repeats = 20)
-res2 <- lapply(sizes, demography_model, R = 200, alpha = 9, beta = 1, repeats = 20)
+simple_skill <- lapply(sizes, demography_model, T_MAX = 200, ALPHA = -7, SIGMA = 1, R_MAX = 20)
+complex_skill <- lapply(sizes, demography_model, T_MAX = 200, ALPHA = -9, SIGMA = 1, R_MAX = 20)
 df <- tibble(N = rep(sizes, 2), 
-             zbar = c(unlist(res), unlist(res2)), 
+             z_delta_bar = c(unlist(simple_skill), 
+                             unlist(complex_skill)), 
              trait = rep(c("simple","complex"), each = length(sizes)))
 ```
 
 Note, that we are again using `lapply()` here. Similar to what we do within `demography_model()`, we provide an argument (different population `sizes`) which should be applied to a function (here, `demography_model`). Arguments that follow the function description are directly handed over to the function. In the last line of this chunk, we have created a `tibble` with the results for both skills and the different population sizes. Now, we can plot the results. 
 
 ```{r effectivePopSize, fig.cap="For a simple trait effective populaton size (at which the trait can be just maintained in a population) is much smaller than the population that is required to maintain a complext trait."}
-library(ggplot2)
 ggplot(df) + 
-  geom_line(aes(x = N, y = zbar, color = trait)) +
+  geom_line(aes(x = N, y = z_delta_bar, color = trait)) +
   xlab("Effective population size") + 
   ylab("Change in average skill level, delta z bar") + 
   geom_hline(yintercept = 0) + 
@@ -140,7 +150,7 @@ Henrich calls the minimum population size required to maintain a skill the criti
 
 ```{r logEffectivePopSize, fig.cap="The same as in Fig. \\@ref(fig:effectivePopSize) but using log on population sizes."}
 ggplot(df) + 
-  geom_line(aes(x = log(N), y = zbar, color=trait)) +
+  geom_line(aes(x = log(N), y = z_delta_bar, color=trait)) +
   xlab("log(Effective population size)") +
   ylab("Change in average skill level, delta z bar") + 
   geom_hline(yintercept = 0) + 
@@ -150,20 +160,20 @@ ggplot(df) +
 And so, we could use a linear fit and then solve for $y = 0$ to calculate $N^\star$.
 
 ```{r 10.9}
-fit <- lm(zbar ~ log(N), df[df$trait=="simple",])
+fit <- lm(z_delta_bar ~ log(N), df[df$trait=="simple",])
 print(fit)
 N_star <- exp(solve(coef(fit)[-1], -coef(fit)[1]))
 N_star
 ```
 
-Of course in the last step, we also have to take the exponent of the resulting value to revert the log function. We see that a simple trait with a low alpha/beta ratio requires a minimum population size of about `r round(N_star)`. Let us now calculate the $N^\star$ values for different trait complexities.
+Of course in the last step, we also have to take the exponent of the resulting value to revert the log function. We see that a simple trait with a low alpha/sigma ratio requires a minimum population size of about `r round(N_star)`. Let us now calculate the $N^\star$ values for different trait complexities.
 
 ```{r 10.10, cache = TRUE}
 sizes <- seq(100, 6100, by = 500)
 
-res <- do.call("rbind", lapply(seq(from = 4, to = 9, by = .5), function(alpha){
+res <- do.call("rbind", lapply(seq(from = -4, to = -9, by = .5), function(alpha){
   tmp_z <- unlist(lapply(sizes, demography_model, 
-                         R = 200, alpha = alpha, beta = 1, repeats = 5))
+                         R = 200, alpha = alpha, sigma = 1, repeats = 5))
   fit <- lm(tmp_z ~ log(sizes))
   n_star <- exp(solve(coef(fit)[-1], -coef(fit)[1]))
   tibble(n_star = n_star, alpha = alpha)
@@ -171,17 +181,17 @@ res <- do.call("rbind", lapply(seq(from = 4, to = 9, by = .5), function(alpha){
 res
 ```
 
-And finally, we can print the critical population sizes as a function of the trait complexity $\alpha$ over $\beta$. 
+And finally, we can print the critical population sizes as a function of the trait complexity $\alpha$ over $\sigma$. 
 
 ```{r 10.11, fig.cap="Critical population size, $N^\\star$, for different skill complexities."}
 ggplot(res, aes(x = alpha, y = n_star)) + 
   geom_line() + 
-  xlab(expression(alpha/beta)) +
+  xlab(expression(alpha/sigma)) +
   ylab("Critical populaton size, N*") + 
   theme_bw()
 ```
 
-It is interesting to observe that the critical population size increases exponentially with skill complexity. This also suggests that all being equal, very high skill levels will never be reached by finite population sizes. However, different ways of learning (e.g. teaching) could considerably decrease $\alpha$ and $\beta$ over time and so allow high skill levels. 
+It is interesting to observe that the critical population size increases exponentially with skill complexity. This also suggests that all being equal, very high skill levels will never be reached by finite population sizes. However, different ways of learning (e.g. teaching) could considerably decrease $\alpha$ and $\sigma$ over time and so allow high skill levels. 
 
 
 
