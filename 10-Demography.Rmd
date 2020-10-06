@@ -200,7 +200,7 @@ N_star_complex <- exp(-(fit$coefficients[1] / fit$coefficients[2]))
 as.numeric(N_star_complex)
 ```
 
-Note that we need to take the exponent (`exp()`) of the resulting value to revert the log function that we applied to the population size. We see that a simple skill with a low alpha to sigma ratio requires a minimum population size of about `r round(N_star_simple)`, whereas a much large population size is required to maintain a complex trait (about `r round(N_star_complex)`). 
+Note that we need to take the exponent (`exp()`) of the resulting value to revert the log function that we applied to the population size. We see that a simple skill with a low alpha to sigma ratio requires a minimum population size of about `r round(N_star_simple)`, whereas a much large population size is required to maintain a complex trait (about `r round(N_star_complex)`). When you go back to Fig. @ref(fig:10.7) you can see that these points correspond with the graphs of the simple and complex skill crossing the x-axis. 
 
 Let us now calculate the $N^\star$ values for different skill complexities and different population sizes. We first set up the parameter space using `expand.grid()`. This function essentially creates all possible combinations of input variables. In our case, we want all possible combinations of the different population sizes `N` and skill complexities, which we will vary using different values for $\alpha$). Therefore, executing this function will return a two column `data.frame` (for `N` and `alpha`):
 
