@@ -174,29 +174,39 @@ ggplot(data) +
   theme_bw()
 ```
 
-And so, we could use a linear fit and then solve for $y = 0$ to calculate $N^\star$:
+And so, we could use a linear fit and then solve for $y = 0$ to calculate $N^\star$. To do this we use the `lm()` function, which fits a linear model to the data that we provide. It takes a `formula` argument that identifies the 'response variable' (here `z_delta_bar`) and the 'predictor variable' (here `log(N)`). The two variables are separated with a `~` sign. To calculate a fit just for the data points of the simple skill simulation, we only hand over that part of the `data` where the `skill` column contains the term `simple`. 
 <!-- `lm()` and `exp()` need to be introduced I think, and solve(), etc. -->
 
 ```{r 10.9}
+# Create linear regression for the change in average skill level in response to population size
 fit <- lm(formula = z_delta_bar ~ log(N), 
-          data = data[data$skill=="simple",])
-print(fit)
-N_star_simple <- exp(solve(coef(fit)[-1], -coef(fit)[1]))
-N_star_simple
-
-fit <- lm(formula = z_delta_bar ~ log(N), 
-          data = data[data$skill == "complex",])
-N_star_complex <- exp(solve(coef(fit)[-1], -coef(fit)[1]))
-N_star_complex
+          data = data[data$skill == "simple",])
+fit
 ```
 
-Note that we need to take the exponent of the resulting value to revert the log function. We see that a simple skill with a low alpha to sigma ratio requires a minimum population size of about `r round(N_star_simple)`, whereas a much large population size is required to maintain a complex trait (here `r round(N_star_complex)`). 
+The result is a list of information from the linear regression. Here, we are interested in the intercept with the y-axis and the inclination of the linear regression, both of which are displayed under `Coefficients`. We can calculate the point at which our regression line crosses the x-axis using the linear function $y = mx+b$, setting $y=0$ and then transforming, such that $x=-\frac{b}{m}$, where $b$ is the y-axis intercept, and $m$ is the inclination. 
+
+```{r 10.10}
+# Solve for y = 0 by using the coefficients of the linear regression:
+b <- fit$coefficients[1]
+m <- fit$coefficients[2]
+N_star_simple <- exp(-(b / m))
+as.numeric(N_star_simple)
+
+# And the same calculation for the complex skill
+fit <- lm(formula = z_delta_bar ~ log(N), 
+          data = data[data$skill == "complex",])
+N_star_complex <- exp(-(fit$coefficients[1] / fit$coefficients[2]))
+as.numeric(N_star_complex)
+```
+
+Note that we need to take the exponent (`exp()`) of the resulting value to revert the log function that we applied to the population size. We see that a simple skill with a low alpha to sigma ratio requires a minimum population size of about `r round(N_star_simple)`, whereas a much large population size is required to maintain a complex trait (about `r round(N_star_complex)`). 
 
 Let us now calculate the $N^\star$ values for different skill complexities and different population sizes. We first set up the parameter space using `expand.grid()`. This function essentially creates all possible combinations of input variables. In our case, we want all possible combinations of the different population sizes `N` and skill complexities, which we will vary using different values for $\alpha$). Therefore, executing this function will return a two column `data.frame` (for `N` and `alpha`):
 
 <!-- expand.grid() needs to be introduced -->
 
-```{r 10.10}
+```{r 10.11}
 # Run simulation for the following population sizes
 sizes <- seq(from = 100, to = 6100, by = 500)
 
@@ -209,7 +219,7 @@ head(simulations)
 
 Now we can run simulations for all combinations of population sizes and skill compexities:
 
-```{r 10.11, cache=TRUE}
+```{r 10.12, cache=TRUE}
 z_delta_bar <- lapply(X = 1:nrow(simulations), FUN = function(s){
                   demography_model(T_MAX = 200, 
                                    N = simulations[s, "N"], 
@@ -224,7 +234,7 @@ head(data)
 
 Finally, let us fit a linear regression to each skill complexity to determine the according critical population size $N^\star$:  
 
-```{r 10.12}
+```{r 10.13}
 n_stars <- lapply(X = unique(data$alpha), FUN = function(alpha){
                       # Only use the results with identical value for alpha
                       subset <- data[data$alpha == alpha,]
@@ -242,7 +252,7 @@ results
 Now, we plot the critical population size as a function of the skill complexity $\alpha$ over $\sigma$. Note, that the x-axis label contains Greek letters. There are at least two ways to get `ggplot` to display Greek letters. The most simple way is to type the unicode equivalents of the symbols and letters. In our case this would look like this: `xlab("\u03b1 / \u03C3")`. Alternatively, we can use the `expression()` function and type the names of the Greek letters (see below). This will be parsed and translated into the according letters:
 <!-- expression() needs to be introduced -->
 
-```{r 10.13, fig.cap="The critical population size, $N^\\star$, increases exponentially as skill complexity increases."}
+```{r 10.14, fig.cap="The critical population size, $N^\\star$, increases exponentially as skill complexity increases."}
 ggplot(results, aes(x = alpha, y = n_star)) + 
   geom_line() + 
   xlab(expression(alpha/sigma)) +
