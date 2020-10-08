@@ -16,7 +16,7 @@ behaviours <- sample(x = b, size = n, replace = TRUE)
 behaviours[1:10]
 table(behaviours)
 ```
-
+<!--explain what table() does-->
 Because we are only interested which instance of a particular behaviour an individual expresses, each individual can be fully described by its behaviour, and so, we can represent the entire population as a vector of expressed behaviours (`behaviours`). 
 
 Everyone in our population is constantly exhibiting their behaviour. Occasionally, one of the individuals will copy the behaviour of another individual. To simulate this behavioural updating, we select two random individuals (an observer and a model) and then copy the model's behaviour into the observer's entry. We wrap a loop around these two steps to simulate repeated updating events and add a record variable to store the frequency of each of the behaviours.
@@ -36,7 +36,7 @@ for(timestep in 1:t){
 ```
 
 Now, we can plot the frequency of each behaviour over time, which we recorded in the `recbehav` matrix.
-
+<!--explain melt(), can we not just use a function from tidyverse?-->
 ```{r 12.3, fig.cap="On average the frequenca of two behaviours that are transmitted without a bias will fluctuate around 0.5."}
 library(ggplot2)
 library(reshape2)
@@ -68,7 +68,7 @@ migration_model_1 <- function(POPSIZE, NBEHAVIOUR, NTIMESTEPS){
 ```
 
 The function makes it easy to quickly run simulations with different input parameters. Here, we run the simulation with a population size of $n=20$:
-
+<!--again, replace melt with tidyverse equivalent-->
 ```{r 12.5, fig.cap="In smaller populations (here, $N=20$), drift might lead to the sudden exclusion of one of the two behaviours from the group, such that the other behaviour becomes fixed."}
 # run simulation
 set.seed(3)
@@ -277,7 +277,7 @@ ggplot(res) +
 ## Varying the strength of migration for repeated simulation runs
 
 As we have seen repeatedly in this book, it is often easier to understand how certain parameters affect simulation results when we run simulations many times. Therefore, let us now run our simulation repeatedly (100 times) for two clusters and a fixed migration probability ($\mu=0.05$). We can then use these results to see how correlated the frequency of behaviour 1 is between the two populations. 
-
+<!--replace or explain that do.call does; alterantively use as.matrix(unlist(A1A2A3;B1B2B3;...)ncol=3)-->
 ```{r 12.13, fig.cap="When two populations have occassional migration, we find that populations with high frequency in a behaviour, can slightly increase the frequency of that behaviour in another populaiton. Note that there is no effect if both populations have already fixed on the same behaviour."}
 set.seed(1)
 repeatedRun <- do.call("rbind", 

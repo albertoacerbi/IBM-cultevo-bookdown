@@ -15,7 +15,7 @@ m
 ```
 
 Shown are the relationships between three individuals A, B, and C.  When we look at the first row, we see that A has no interaction with itself (indicated by the zero), but interacts both with B and C (indicated by the ones). From the next row, we see that B is only interacting with C, and the last row tells us that C interacting both with A and with B. This is an example for an asymmetric adjacency matrix because not all interactions are reciprocal (A is interacting with B but B is not interacting with A). We can test this by comparing the upper triangle of the matrix with the lower triangle of the matrix:
-
+<!-- explain upper.tri and lower.tri -->
 ```{r 11.2}
 all(m[upper.tri(m)] == m[lower.tri(m)])
 ```
@@ -107,6 +107,8 @@ In the previous example, we have changed the colour of the nodes' background and
 
 Let's say, we know the age of each individual and we would like to visualise age as different colours of the nodes. For that, we should first store the colour information for each vertex (using the `V()` function) and then change the vertex colour in the plot function:
 
+<!-- explain hear.colors -->
+
 ```{r 11.10}
 # There is no age attribute set
 V(net)$age
@@ -136,7 +138,7 @@ plot(net,
 ```
 
 It can be useful to remove the labels from the nodes and reduce the node size, especially when the networks become large. Also, given that we have a symmetric network (all relationships are reciprocal), we can get rid of the arrow tips. We do this by telling igraph that the network is undirected.
-
+<!-- explain as.undirected -->
 ```{r 11.12, fig.cap="We can remove vertex labels to reduce clutter."}
 net <- as.undirected(net)
 set.seed(1)
@@ -149,7 +151,7 @@ plot(net,
 ```
 
 One final styling example. So far, we have the edges indicate the existence of friendship relationships, which is a binary quality. However, we can also imagine friendship as a continuous variable (from strong = 1 to none = 0). Using the edge function `E()`, we can add attributes to the edges in the network. We can use those to alter the width of edges depending on their relationship strength. To do that, we will first change the adjacency matrix (from binary to continuous values) and then plot the new network.
-
+<!-- explain runif() -->
 ```{r 11.13}
 # create a copy of the adjacency matrix
 adjm2 <- adjm
@@ -245,6 +247,7 @@ transitivity(graph = net)
 Additional to these high-level measures, we can use a series of node-level measures to describe connectivity in more detail:
 
 **Degree centrality** refers to the number of (incoming/outgoing/both) edges of a vertex. We can use the `degree()` function to determine the degree centrality of each node:
+<!-- explain identical() -->
 ```{r 11.23}
 # number of edges that connected with each node
 degree(graph = net)
@@ -438,7 +441,7 @@ create_network <- function(N, FRIENDSHIPRATIO){
 ```
 
 Now we can create a fully connected network, run the gossip model on it, and plot the results:
-
+<!--recall how lapply function works form chapter 10-->
 ```{r 11.35, cache=TRUE}
 adjm_full <- create_network(N = n, FRIENDSHIPRATIO = 1)
 
@@ -449,7 +452,7 @@ data_full <- do.call("rbind",
                      )
 ```
 
-
+<!--explain geom_smooth-->
 
 ```{r 11.36, fig.cap="Gossip spreads faster in a fully connected network, compared to a less connected network.", message=FALSE}
 data$type <- "colleague network"
@@ -540,7 +543,7 @@ gossip_model_2(ADJM = adjm, PROP = .75, TURNS = 100, SIM = 1)
 When you run d
 
 Now, let us run these functions for different group sizes and different connectivities, and let us repeat these simulations several times to get a better estimate:
-
+<!--recall how expand.grid works-->
 ```{r 11.41, cache=TRUE}
 parameters <- expand.grid(groupSize = c(10,50),#c(10,30,50,70,90),
                           reconnections = c(0,.01,.05,.1,.5,1),
@@ -562,7 +565,7 @@ parameters <- cbind(parameters, tmp2)
 ```
 
 To plot the average time of our repeated simulations, we need to first calculate this average:
-
+<!--explain what is happening here-->
 ```{r 11.42}
 library(tidyverse)
 parameters %>% 
@@ -573,7 +576,7 @@ parameters %>%
 ```
 
 Let us have a look at both the average network degree and the average path length of the networks:
-
+<!--explain why you use factor()-->
 ```{r 11.43, fig.cap="Based on how small world networks are created, the average network degree remains unchanged even if the probability of reconnection increases. Note that we use the plotting function `geom_jitter()` which works just like `geom_point()` but is also adding a little y-axis jitter to the points so that we can see overlapping points."}
 parameters$groupSize <- factor(parameters$groupSize)
 
@@ -668,7 +671,7 @@ ggplot(res) +
 ```
 
 For the simple contagion case we find very little difference between the two network types. Let us now add the complex contagion case to the simulation:
-
+<!--explain how do.call() works-->
 ```{r 11.47, cache=TRUE}
 # for repeated interactions 
 informationSpread <- function(NET, MODE = "simple", ROUNDS = 100, CONTACTS = 1){
