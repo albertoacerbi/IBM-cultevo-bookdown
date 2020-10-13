@@ -74,15 +74,16 @@ The book does not present any *new* model or perspective on cultural evolution. 
 
 In general, we followed the [tidyverse style guide](https://style.tidyverse.org) for names of functions, variables, and code formatting.
 
+Name of functions and variables are with underscores to separate words and lowercase letters, e.g. `previous_population`, `biased_mutation`. If in the same chapter we have more than one function for the same model (for example because we add parameters), they are numbered as `unbiased_transmission_1()`, `unbiased_transmission_2()`, etc.
+
 For the text, we used the following conventions:
 
-* inline code: `geom_line()`, `unbiased_transmission()`
+* names of functions and data structures: `unbiased_transmission()`, `population`, `output`  
 
 * technical terms: 'geoms', 'chr'
 
 * names of variables: $p$, $generation$
 
-* names of data structures: **population**, **output** 
 
 ## Further readings 
 
