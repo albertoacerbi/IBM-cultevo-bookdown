@@ -1,13 +1,23 @@
 # Social network structure
 
-For mathematical tractability models often assume well-mixed populations, where any individual is equally likely to interact with any other individual. These models often provide a good approximation to the real-world. Henrich's model, for example, has shown that a population's ability to maintain and accumulate cultural traits depends on its size, whereby larger populations are more likely to retain and improve more complex cultural traits than smaller ones. This model is a useful tool to study how population-level characteristics (here, demography) play a role in cultural dynamics. Given that individuals acquire information from other individuals through social learning, we might also suspect that individual-level phenomena are important, too. Commonly, individual interactions are represented as networks, whereby nodes (also referred to as vertex, _pl._ vertices) represent individuals, and ties (also referred to as edges) between any two nodes indicate a relationship (e.g. friendship or kinship, or willingness to cooperate, etc.). Networks can represent relationships between individuals, but just as well between countries, institutions, or any other kind of actors. 
+For mathematical tractability models often assume well-mixed populations, where any individual is equally likely to interact with any other individual. These models often provide a good approximation to the real-world. Henrich's model from the previous chapter, for example, has shown that a population's ability to maintain and accumulate cultural traits depends on its size, whereby larger populations are more likely to retain and improve more complex cultural traits than smaller ones. This model is a useful tool to study how population-level characteristics (here, demography) play a role in cultural dynamics. Given that individuals acquire information from other individuals through social learning, we might also suspect that individual-level phenomena are important, too. A common tool to represent individual interactions are networks. Networks consist of nodes (also referred to as vertex, _pl._ vertices), which represent individuals, and ties (also referred to as edges) between any two nodes, which indicate that the existence of a relationship (e.g. friendship or kinship, or willingness to cooperate, etc.). Networks can represent relationships between individuals, but just as well between countries, institutions, or any other kind of actors. 
 
 In this chapter, we will cover the basics of social networks, how to create, analyse, and use them. Finally, we will use all of that to find an answer to the question: how do individual-level interaction patterns affect population-level cultural dynamics?
 
 ## Network basics
-Let us start with a small group of colleagues who see each other on a regular base in the office, some are friends, and some are not (sometimes the friendships might not even be reciprocal). For this example, we use gossip as socially transmitted information. Say, we want to better understand how gossip is spreading through this group. At the simplest level, we might assume that: any two colleagues will exchange gossip whenever they meet. This would reduce the group of colleagues to a well-mixed population, where information can flow freely. However, assume that gossip is only transmitted if two friends interact. Now we have a situation, where information flow is constrained by the underlying friendship network. To explore, how information can spread in that friendship network, we first need to find a way to represent it in R. One way to represent networks is an adjacency matrix, $A$. It is a square matrix where all possible dyadic interactions of individuals in a population are represented as entries in its rows ($i$) and columns ($j$). Commonly, rows indicate interacting individuals, and columns are individuals who are recipients of this interaction. For example:
+<!--Let us start with a small group of colleagues who see each other on a regular base in the office, some are friends, and some are not (some friendships are reciprocal, some are not). For this example, we use gossip as socially transmitted information. Say, we want to better understand how gossip is spreading through this group. At the simplest level, we might assume that: any two colleagues will exchange gossip whenever they meet. This would reduce the group of colleagues to a well-mixed population, where information can flow freely. However, assume that gossip is only transmitted if two friends interact. Now we have a situation, where information flow is constrained by the underlying friendship network. To explore, how information can spread in that friendship network, we first need to find a way to represent it in R. -->
+```{r 11.1, echo=FALSE, fig.cap="Example network."}
+library(igraph)
+A <- matrix(c(0,1,1,0, 0,0,1,0, 1,0,0,1, 0,0,1,0), nrow = 4, byrow = TRUE)
+row.names(A) <- c("A", "B", "C", "D")
+colnames(A) <- c("A", "B", "C", "D")
+net <- graph_from_adjacency_matrix(A)
+plot(net, edge.curved=0.5)
+```
+The above figure shows a simple graph with four nodes
+One way to represent networks is an adjacency matrix, $A$. It is a square matrix where all possible dyadic interactions of individuals in a population are represented as entries in its rows ($i$) and columns ($j$). Commonly, rows indicate interacting individuals, and columns are individuals who are recipients of this interaction. For example:
 
-```{r 11.1}
+```{r 11.2}
 m <- matrix(c(0,1,1, 0,0,1, 1,1,0), nrow = 3, byrow = TRUE)
 row.names(m) <- c("A", "B", "C")
 colnames(m) <- c("A", "B", "C")
@@ -16,16 +26,14 @@ m
 
 Shown are the relationships between three individuals A, B, and C.  When we look at the first row, we see that A has no interaction with itself (indicated by the zero), but interacts both with B and C (indicated by the ones). From the next row, we see that B is only interacting with C, and the last row tells us that C interacting both with A and with B. This is an example for an asymmetric adjacency matrix because not all interactions are reciprocal (A is interacting with B but B is not interacting with A). We can test this by comparing the upper triangle of the matrix with the lower triangle of the matrix:
 <!-- explain upper.tri and lower.tri -->
-```{r 11.2}
+```{r 11.3}
 all(m[upper.tri(m)] == m[lower.tri(m)])
 ```
 
 We can make this matrix symmetric by replacing the lower matrix triangle with the upper one (this requires us to first transpose the triangle using the `t()` function):
 
-```{r 11.3}
-# Either
+```{r 11.4}
 m[lower.tri(m)] <- t(m)[lower.tri(m)]
-# or use m[2,1] <- 1
 m
 # Check whether the matrix is symmetric now:
 all(m[upper.tri(m)] == m[lower.tri(m)])
