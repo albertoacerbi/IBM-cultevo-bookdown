@@ -1,10 +1,11 @@
 # Social network structure
 
-For mathematical tractability models often assume well-mixed populations, where any individual is equally likely to interact with any other individual. These models often provide a good approximation to the real-world. Henrich's model from the previous chapter, for example, has shown that a population's ability to maintain and accumulate cultural traits depends on its size, whereby larger populations are more likely to retain and improve more complex cultural traits than smaller ones. This model is a useful tool to study how population-level characteristics (here, demography) play a role in cultural dynamics. Given that individuals acquire information from other individuals through social learning, we might also suspect that individual-level phenomena are important, too. A common tool to represent individual interactions are networks. Networks consist of nodes (also referred to as vertex, _pl._ vertices), which represent individuals, and ties (also referred to as edges) between any two nodes, which indicate that the existence of a relationship (e.g. friendship or kinship, or willingness to cooperate, etc.). Networks can represent relationships between individuals, but just as well between countries, institutions, or any other kind of actors. 
+For mathematical tractability models often assume well-mixed populations, where any individual is equally likely to interact with any other individual. These models can provide good approximations of the real-world. Henrich's model from the previous chapter, for example, has shown that a population's ability to maintain and accumulate cultural traits depends on its size, whereby larger populations are more likely to retain and improve more complex cultural traits than smaller ones. This model provides useful insights into the role of population-level characteristics (here, demography) on cultural dynamics. However, cultural transmission is a social process that happens at the individual level, and for some questions it is important to take an individual-level perspective. There is a growing number of studies showing that the structure of interactions (commonly represented as social networks) with other individuals can affect population-wide transmission of behaviours or information. For example, a study on the spread of health behaviour has shown that information spreads faster and further in networks that are more clustered than in less clustered networks (@centola_spread_2010). To study the role of network characteristics (size, density, clustering, etc.) we need to be able to implement, modify, visualise, and analyse networks. We will cover all of these points in the first half of this chapter. In the second half, we will use these skills to study how social network structure affects cultural dynamics. 
 
-In this chapter, we will cover the basics of social networks, how to create, analyse, and use them. Finally, we will use all of that to find an answer to the question: how do individual-level interaction patterns affect population-level cultural dynamics?
 
 ## Network basics
+Networks are a popular tool to visualise relationships between different actors. For example, co-author ship networks typically visualise which authors frequently publish articles together, ecological networks demonstrate trophic interactions between different species, and kin ship networks show how individuals are related to each other. All networks are comprised of at least two components: 'nodes' (also referred to as vertex, _pl._ vertices), which represent actors, and 'ties' (also referred to as edges) between any two nodes, which represent the existence of a relationship (e.g. co-authorship, kinship, cooperation, etc.). 
+
 ```{r 11.0, echo=FALSE, fig.cap="Example network."}
 library(igraph)
 A <- matrix(c(0,1,1,0, 0,0,1,0, 1,0,0,1, 0,0,1,0), nrow = 4, byrow = TRUE)
@@ -13,11 +14,11 @@ colnames(A) <- c("A", "B", "C", "D")
 net <- graph_from_adjacency_matrix(A)
 plot(net, edge.curved=0.5)
 ```
-The above figure shows a simple graph with four nodes (A-D), and their relationship edges (arrows). Not that some nodes have an incoming and an outgoing edge to the another node (e.g. A and C) but some nodes have more incoming than outgoing edges (here A and C). This can be the case when edges indicate relationships that can be unilateral, like friendship or support. In other cases, e.g. kin ship ties, edges are always riciprocal. In this case arrow heads are ommitted and a straight line is drawn between nodes. 
+The above figure shows a simple graph with four nodes (A-D), and their relationship edges (arrows). Note that some nodes have an incoming and an outgoing edge to another node (e.g. A and C) but some nodes have more incoming than outgoing edges (here A and C). This means tht the relationship is not mutual, or unilateral, like friendship or donations. In other cases, e.g. kin ship ties, edges are always reciprocal. In this case arrow heads are often ommitted and a straight line is drawn between the nodes.
 
-To work with networks in R, we need to find a way to represent nodes and edges. One way to do this is a so called adjacency matrix. An adjcaceny matrix is a square matrix where rows indicate interacting individuals, and columns are individuals who are recipients of this interaction. For example, assume we have $N$ nodes, then our adjacency matrix $A$ will be of the size $N \times N$. In the simplest case we denote the existence of an interaction with a $1$ and the absence of such with a $0$. That is, if $A_{ij}=1$ and $A_{ji}=1$ then we know that there is a reciprocal interaction between node $i$ and $j$. 
+To work with networks in R, we need to find a way to represent nodes and edges. One option is to use an adjacency matrix (the other is an edge list, which we will not discuss here). An adjcaceny matrix is a square matrix where every possible relationship between any two actors (also called a dyad), is represented as a value (typically a $0$ if there is no relationship, or a $1$, if there is one). Generally, rows and columns represent the 'from' and 'to' nodes. As an example, assume we have $N$ actors, then our adjacency matrix $A$ will be of the size $N \times N$. If individual $i$ and $j$ have a reciprocal realtionship, then $A_{i,j}=A_{ji}=1$. However, if, say, $i$ has donated to $j$ at some point but $j$ not to $i$, then we would write $A_{ij}=1$ and $A_{ji}=0$. Consequentially, if there is no relationship between the two then $A_{i,j}=A_{ji}=0$. Let us translate this into R code. 
 
-Let us translate this into R code. We start be setting up a simple square matrix with a few zeros and ones. Let us also name the rows and columns with capital `Letters`. These will be the names of the nodes. 
+We start be setting up a simple square matrix with a few zeros and ones. Let us also name the rows and columns with capital `Letters`. These will be the names of the nodes. 
 
 ```{r 11.1}
 m <- matrix(c(0,1,1,0, 0,0,1,0, 1,0,0,1, 0,0,1,0), nrow = 4, byrow = TRUE)
@@ -36,11 +37,15 @@ all(m[upper.tri(m)] == t(m)[upper.tri(m)])
 
 As we have already determined, $A$ is asymmetric. If you want a short cut to test whether a matrix is symmetric, you can also use the generic function `isSymmetric()`. 
 
-Sometimes, you might want to create a random network using a symmetric adjacency matrix. A simple way to create a symmetric adjacency matrix is the following: create a random square matrix and then copy the entries from the transposed upper triangle into the entries of the lower triangle:
+```{r}
+isSymmetric(m)
+```
+
+Sometimes, you might want to create a random network using a symmetric adjacency matrix. A simple way to create a symmetric adjacency matrix is the following: create a random square matrix and then copy the entries from the transposed upper triangle into the entries of the lower triangle. This ensures that $A_{ij}=A_{ji}$. 
 
 ```{r 11.3}
 # Creating a random matrix
-random_matrix <- matrix(sample(x = c(0,1), size = 4^2, replace=T), ncol=4)
+random_matrix <- matrix(sample(x = c(0,1), size = 10^2, replace=T), ncol=10)
 random_matrix
 # It is not symmetric
 isSymmetric(random_matrix)
