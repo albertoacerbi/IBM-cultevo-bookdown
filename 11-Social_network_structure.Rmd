@@ -6,6 +6,7 @@ For mathematical tractability models often assume well-mixed populations, where 
 ## Network basics
 Networks are a popular tool to visualise relationships between different actors. For example, co-author ship networks typically visualise which authors frequently publish articles together, ecological networks demonstrate trophic interactions between different species, and kin ship networks show how individuals are related to each other. All networks are comprised of at least two components: 'nodes' (also referred to as vertex, _pl._ vertices), which represent actors, and 'ties' (also referred to as edges) between any two nodes, which represent the existence of a relationship (e.g. co-authorship, kinship, cooperation, etc.). 
 
+<!--Update all chunk numbers! -->
 ```{r 11.0, echo=FALSE, fig.cap="Example network."}
 library(igraph)
 A <- matrix(c(0,1,1,0, 0,0,1,0, 1,0,0,1, 0,0,1,0), nrow = 4, byrow = TRUE)
@@ -37,7 +38,7 @@ all(m[upper.tri(m)] == t(m)[upper.tri(m)])
 
 As we have already determined, $A$ is asymmetric. If you want a short cut to test whether a matrix is symmetric, you can also use the generic function `isSymmetric()`. 
 
-```{r}
+```{r 11.2.1}
 isSymmetric(m)
 ```
 
@@ -58,54 +59,70 @@ isSymmetric(random_matrix)
 ```
 
 ## Generating networks
+Networks can vary widely depending on what they represent, or what their purpose is if they are simulate from scratch. Fig @ref{11.3.1} shows a few different types of networks that require different methods to create. A simple way to generate certain types of networks with, say, different number of nodes and edges, is to use one of the many functions provided by the `igraph` package. For example the ring graph above can be generated with this simple command: `make_ring(n=10)`. 
+
+```{r 11.3.1, echo=FALSE, fig.cap="Different graph types (from left: circle, lattice, random, scale free, fully connected) vary in the density and distribution of edges between nodes."}
+library(igraph)
+parbefore <- par()$mar
+par(mar=c(0,0,0,0))
+par(mfrow=c(1,5))
+tmp <- lapply(
+  list(
+    make_ring(n=10),
+    make_lattice(dimvector=c(5,5), nei=1, directed=F),
+    erdos.renyi.game(n=25,p.or.m=.1, type="gnp", directed=F, loops=F),
+    barabasi.game(n=25, power=1.1, directed=F),
+    make_full_graph(n=10)
+  ), plot, vertex.label=NA, vertex.color="#18889F", edge.color="#33333B", edge.width=1)
+par(mfrow=c(1,1))
+par(mar=parbefore)
+```
+
+For certain projects these standard networks might not be sufficient, for example, if you have a certain mechanism in mind. Let us write our own network generating function to suit our needs. As an example, let us write a function that creates a random network of $N$ individuals. Lets assum that the edges we will add between nodes represent friendships.  with a variable friendship proportion $f$ (for $f=1$ all individuals are friends, and for $f=0$, sadly no one is friends with each other). 
+
+
+```{r 11.4}
+create_network <- function(N, f){
+  # set up an empty adjacency matrix of size NxN
+  A <- matrix(0, ncol = N, nrow = N)
+  # set up a friendship counter
+  friends <- 0
+  
+  # we will add friendships until we reach the desired number
+  while(friends < round((((N^2)-N)/2) * f)){
+    dyad <- sample(x = N, size = 2, replace = FALSE)
+    i <- dyad[1]
+    j <- dyad[2]
+    if(A[i, j] == 0){
+      A[i, j] <- A[j, i] <- 1
+      friends <- friends + 1
+      }
+  }
+  return(A)
+}
+```
+
+In our new function `create_network()` we first set up an empty adjacency matrix and a friendship counter. Then, we use a `while` loop to continuously select a random dyad in our group (i.e. individual $i$ and $j$), test whether they are already friends. If this is not the case, we set $A_{ij}=A_{ji}=1$ and increase the friendship counter. However, if they already are friends, we simply continue selecting another random dyad from our network. We stop when we reach $f(N^2-N)/2$ friendships (the total number of possible connections is $N^2$, however, we assume that individuals cannot be friends with themselves, and that friendships are reciprocal). 
+
+```{r 11.5}
+create_network(N = 10, f = .5)
+```
+
+Our new function allows us to create a variety of different networks. Let us now use additional functions from the `igraph` package to turn our adjacency matrices in networks and then to visualise them. This will give us a better intuition of what our groups look like when we change the two parameters. 
+
+
+## Plotting networks 
 <!--Let us start with a small group of colleagues who see each other on a regular base in the office, some are friends, and some are not (some friendships are reciprocal, some are not). For this example, we use gossip as socially transmitted information. Say, we want to better understand how gossip is spreading through this group. At the simplest level, we might assume that: any two colleagues will exchange gossip whenever they meet. This would reduce the group of colleagues to a well-mixed population, where information can flow freely. However, assume that gossip is only transmitted if two friends interact. Now we have a situation, where information flow is constrained by the underlying friendship network. To explore, how information can spread in that friendship network, we first need to find a way to represent it in R. 
 Now let us turn back to our group of co-workers, and let us create a random friendship network. We start with an empty adjacency matrix, add friendships to the upper triangle and then copy the mirror image to the lower triangle (this is assuming that friendships are reciprocal):
 -->
 
-```{r 11.4}
-#maybe use this from 11.34
-create_network <- function(N, FRIENDSHIPRATIO){
-  adjm <- matrix(0, ncol = N, nrow = N)
-  adjm[upper.tri(adjm)] <- sample(x = 0:1, 
-                                  size = N*(N-1)/2, 
-                                  replace = TRUE, 
-                                  prob = c(1-FRIENDSHIPRATIO, FRIENDSHIPRATIO))
-  adjm[lower.tri(adjm)] <- t(adjm)[lower.tri(adjm)]
-  return(adjm)
-  }
-# n <- 10
-# adjm <- matrix(NA, ncol = n, nrow = n)
-# adjm
-```
 
-Now, we randomly assign friendships to one of the triangles. We sample from zeros (no friends) and ones (friends) with a probability that indicates how many friendships there are in the network (`friendschipRatio`):
-
-```{r 11.5}
-friendshipRatio <- 0.5
-
-adjm[upper.tri(adjm)] <- sample(x = 0:1, 
-                                size = n*(n-1)/2, 
-                                replace = TRUE, 
-                                prob = c(1-friendshipRatio, friendshipRatio))
-adjm
-
-# add the mirror image to the lower triangle
-adjm[lower.tri(adjm)] <- t(adjm)[lower.tri(adjm)]
-adjm
-
-# replace diagonal (these indicate self-references) with zeros
-diag(adjm) <- 0
-adjm
-```
-
-
-This is all we need to describe the interactions and the flow of information within this group. And while we could already use other tools in R to analyse it, we should first try to visualise this network to get a better intuition of what this group looks like. The `igraph` package provides many incredibly useful functions and tools to create, work with, and analyse networks. We will rely on many of its functions in this chapter. 
-
-## Plotting networks 
 Given that we already have an adjacency matrix, we can create a network using the `graph_from_adjacency_matrix()` function. 
 
 ```{r 11.6, message=FALSE}
-library(igraph)
+# adj <- create_network(N = 20, f = .15)
+# net <- graph_from_adjacency_matrix(adj)
+# plot(net, vertex.label=NA, vertex.color="#18889F", edge.color="#33333B", vertex.size=3, edge.arrow.size=.1)
 net <- graph_from_adjacency_matrix(adjm)
 net
 ```
