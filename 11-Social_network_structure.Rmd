@@ -61,7 +61,7 @@ isSymmetric(random_matrix)
 ## Generating networks
 Networks can vary widely depending on what they represent, or what their purpose is if they are simulate from scratch. Fig @ref{11.3.1} shows a few different types of networks that require different methods to create. A simple way to generate certain types of networks with, say, different number of nodes and edges, is to use one of the many functions provided by the `igraph` package. For example the ring graph above can be generated with this simple command: `make_ring(n=10)`. 
 
-```{r 11.3.1, echo=FALSE, fig.cap="Different graph types (from left: circle, lattice, random, scale free, fully connected) vary in the density and distribution of edges between nodes."}
+```{r 11.3.1, echo=FALSE, message=FALSE, fig.cap="Different graph types (from left: circle, lattice, random, scale free, fully connected) vary in the density and distribution of edges between nodes."}
 library(igraph)
 parbefore <- par()$mar
 par(mar=c(0,0,0,0))
@@ -105,21 +105,17 @@ create_network <- function(N, f){
 In our new function `create_network()` we first set up an empty adjacency matrix and a friendship counter. Then, we use a `while` loop to continuously select a random dyad in our group (i.e. individual $i$ and $j$), test whether they are already friends. If this is not the case, we set $A_{ij}=A_{ji}=1$ and increase the friendship counter. However, if they already are friends, we simply continue selecting another random dyad from our network. We stop when we reach $f(N^2-N)/2$ friendships (the total number of possible connections is $N^2$, however, we assume that individuals cannot be friends with themselves, and that friendships are reciprocal). 
 
 ```{r 11.5}
-create_network(N = 10, f = .5)
+adjm <- create_network(N = 10, f = .5)
+adjm
 ```
 
 Our new function allows us to create a variety of different networks. Let us now use additional functions from the `igraph` package to turn our adjacency matrices in networks and then to visualise them. This will give us a better intuition of what our groups look like when we change the two parameters. 
 
 
 ## Plotting networks 
-<!--Let us start with a small group of colleagues who see each other on a regular base in the office, some are friends, and some are not (some friendships are reciprocal, some are not). For this example, we use gossip as socially transmitted information. Say, we want to better understand how gossip is spreading through this group. At the simplest level, we might assume that: any two colleagues will exchange gossip whenever they meet. This would reduce the group of colleagues to a well-mixed population, where information can flow freely. However, assume that gossip is only transmitted if two friends interact. Now we have a situation, where information flow is constrained by the underlying friendship network. To explore, how information can spread in that friendship network, we first need to find a way to represent it in R. 
-Now let us turn back to our group of co-workers, and let us create a random friendship network. We start with an empty adjacency matrix, add friendships to the upper triangle and then copy the mirror image to the lower triangle (this is assuming that friendships are reciprocal):
--->
+To visualise a network nodes and edges have to be placed in the correct relation to each other on an empty canvas. Because there is a lot of calculation going into this, we will use the plotting features that come with the `igraph` package. This package requires the network to be an `IGRAPH` object. So first, we will have to turn our adjacency matrix into a network. The function `graph_from_adjacency_matrix()` is going to do this for us: 
 
-
-Given that we already have an adjacency matrix, we can create a network using the `graph_from_adjacency_matrix()` function. 
-
-```{r 11.6, message=FALSE}
+```{r 11.6}
 # adj <- create_network(N = 20, f = .15)
 # net <- graph_from_adjacency_matrix(adj)
 # plot(net, vertex.label=NA, vertex.color="#18889F", edge.color="#33333B", vertex.size=3, edge.arrow.size=.1)
@@ -127,27 +123,34 @@ net <- graph_from_adjacency_matrix(adjm)
 net
 ```
 
-When we return the `net` object, we receive a lot of information about our network, for example, that it is there are `r vcount(net)` vertices and `r ecount(net)` edges (for more information be sure to have a look at this short [igraph introduction](https://igraph.org/r/doc/aaa-igraph-package.html)). However, we did not receive an actual network figure. For this, we can use `R`'s generic plot function:
+`graph` is providing us with a lot of information, for example, it tells us that `net` is an `IGRAPH` object, and that there are `r vcount(net)` vertices and `r ecount(net)` edges (for more information on reading this output take a look at this short [igraph introduction](https://igraph.org/r/doc/aaa-igraph-package.html)). In addition to general information about the network we receive a series of 'from to' pairs, e.g. `1->2`, indicating the edges between the different nodes. This is essentially an edge list, an alternative to our adjacency matrix to describe relationships. Sometimes, it might be better to work with an edgelist, especially if there are many more nodes than edges. In this case we would require a very large matrix that is mostly filled with zeros and only very few ones. You can use `get.edgelist(net)` to return the edgelist of your network. 
+
+Now that we have our network in the correct shape, we can use the plot function to visualise it:
 
 ```{r 11.7, fig.cap="A simple network with 10 vertices, which are connected by edges (arrows)."}
-set.seed(1)
+# set.seed(1)
 plot(net)
 ```
 
-This is the most basic network plot where each node (with the numbers 1 to `r n`) and their connections (edges/ties) are plotted such that nodes that receive more connections are more central and those that receive less are more peripheral. Note, every time you plot the network, it will have a slightly different layout. If you would like to preserve the node positions you can uncomment the `set.seed()` function in the code chunk above.
+This is the most basic network plot where each node (with the numbers 1 to `r vcount(net)`) and their edges are plotted such that nodes that receive more connections are more central and those that receive less are more peripheral. Note, every time you plot the network, it will have a slightly different layout. To preserve the node positions you can use the `set.seed()` function in the code chunk above. When it is executed prior to plotting, the nodes will always appear in the same location. You can change the position of the nodes by using a different seed number. 
 
-There are many ways to change the looks of network plots. The igraph manual is an ideal starting point to learn more about it. For example, we could plot nodes based on specific layout functions:
+### Network layout
+There are also ways to plot networks in entirely different layouts. In the following graph, for example, we put nodes in a ring layout or on a grid. We use the different `layout.x()` functions in `ìgraph` in combination with the `layout=` argument of the plotting function. 
 
 ```{r 11.8, fig.cap="Example for two different network layouts, the grid and the ring."}
 par(mfrow = c(1,2))
-plot(net, layout = layout.grid(net), main = "Grid layout")
 plot(net, layout = layout.circle(net), main = "Ring layout")
+plot(net, layout = layout.grid(net), main = "Grid layout")
+par(mfrow = c(1,1))
 ```
 
-Or we can directly change the size, and colour of nodes:
+There are many more layout functions that will result in slightly different visualisations, based on how degree or centrality are weighted (bringing nodes closer together or keeping them further apart). Take a look, all of these functions strt with `layout.`. 
+
+
+### Network styling
+In addition to the layout, which affects the placing of nodes, we can also change the actual appearance of nodes and edges, such as their size and width, colour, labelling, and more. While the igraph manual is a good reference to figure out all the possibilities, here is the general principle: any attribute we want to change needs either the `vertex.` or `edge.` prefix. For example, to change the colour of all vertices, we would use `vertex.color=`. Have a look at the following example for more ideas of what we can change:
 
 ```{r 11.9, fig.cap="Using syling arguments with the `plot()` function allows to manipulate the appearence of vertices, edges, and labels."}
-par(mfrow = c(1,1))
 set.seed(1)
 plot(net, 
      vertex.color = "dodgerblue", 
@@ -159,85 +162,87 @@ plot(net,
      main = "Default layout with styling")
 ```
 
-In the previous example, we have changed the colour of the nodes' background and text, and their overall size (attributes starting with `vertex.`). We have also changed the colour of the edges, their width, and the size of the tips (attributes starting with `edge.`).
+As you can see in the graph above, we have changed the colour of the nodes and text, and their overall size (attributes starting with `vertex.`). We have also changed the colour of the edges, their width, and the size of the arrow tips (attributes starting with `edge.`).
 
-Let's say, we know the age of each individual and we would like to visualise age as different colours of the nodes. For that, we should first store the colour information for each vertex (using the `V()` function) and then change the vertex colour in the plot function:
+We can go further than simply using colours to make our neworks look nice. We can also use colour to indicate additional information. Say, we know the age of each individual that is represented by a node in out network. How can we instruct `plot()` to use a different colour for each node depending on its age? To do this, we need to first select colours to represent different ages. Then, we can hand this over to the `vertex.color` argument. Below, we use a function called `heat.colors()`. It creates a vector of $n$ contiguous colours that span the 'heat' colour space (from white over yellow to red). We generate 80 different shades and then select `r vcount(net)` colours (we use the `vcount()` function to count the number of vertices in our network) according to the `age` vector:
 
-<!-- explain hear.colors -->
-
-```{r 11.10}
-# There is no age attribute set
-V(net)$age
-
-# Add an age attribute and randomly assign an age class
-V(net)$age <- sample(x = 1:10, size = n, replace = TRUE)
-
-# The network now has an age attribute
-V(net)$age
-
-V(net)$colour <- heat.colors(n = 10, rev = TRUE)[V(net)$age]
-
-net
-```
-
-The `net` object now has two attributes (one is called age, with numeric values, and one is called colour, with character values). We can now plot this graph:
-
-```{r 11.11, fig.cap="In this plot we indicate a node's age by colouring the node with a different colour (pale yellow: younger, red: older)"}
+```{r 11.9.1, fig.cap="In this plot we indicate a node's age by colouring the node with a different colour (pale yellow: younger, red: older)"}
+# Generate random ages
+age <- sample(x = 18:80, size = vcount(net), replace = TRUE)
+# Select colours
+col <- heat.colors(n = 80, rev = TRUE)[age]
+# Plot network with col
 set.seed(1)
 plot(net, 
-     vertex.color = V(net)$colour, 
+     vertex.color = col, 
+     vertex.label = age,
      vertex.label.color = "black",
      vertex.size = 20,
      edge.color = "black",
      edge.width = 1,
-     edge.arrow.size = 0.5)
+     edge.arrow.size = 0.5,
+     main = "Default layout with styling")
 ```
 
-It can be useful to remove the labels from the nodes and reduce the node size, especially when the networks become large. Also, given that we have a symmetric network (all relationships are reciprocal), we can get rid of the arrow tips. We do this by telling igraph that the network is undirected.
-<!-- explain as.undirected -->
+Compared to the previous plot, three things have changed: (1) the colour of the nodes, (2) the labels of the nodes (now indicating the correct age), and (3) the colour of the vertex text (black is easier to read on these colours). 
+
+It might be a good idea to keep both the `age` and the `col` vector attached to the vertices of our network. We can add them as attributes to the vertices of our network. Using the `get.vertex.attribute()` function we can see that currently there are no attributes stored at all: 
+
+```{r 10.9.2}
+get.vertex.attribute(net)
+```
+
+Let us add the two attributes to the vertices using the `V()` function:
+```{r 11.10}
+# Add an attribute called 'age' and assign the values of the age vector
+V(net)$age <- age
+# The same for the 'col' vector
+V(net)$col <- col
+# Return attributes
+get.vertex.attribute(net)
+# Return the network object
+net
+```
+
+We now have two attributes that are associated with our network. To use them in plotting you can simply replace `age` in the previous plot with `V(net)$age` and `col` with `V(net)$col`. Also, have a look at the `net` object. It now also tells us that there are two attributes (one is called age, with numeric values, and one is called col, with character values). 
+
+Because we have colours representing the age, we may want to remove the labels in each node and make the nodes smaller. This becomes even more important when networks become large. For this, we can simply set `vertex.label` to `NULL`. Also, given that we have a symmetric network (all relationships are reciprocal), we can get rid of the arrow tips. We can do this by turning our network into an 'undirected' network, using the `as.undirected()` function:
+
 ```{r 11.12, fig.cap="We can remove vertex labels to reduce clutter."}
 net <- as.undirected(net)
 set.seed(1)
 plot(net, 
-     vertex.color = V(net)$colour, 
-     vertex.label = "",
+     vertex.color = V(net)$col, 
+     vertex.label = NA,
      vertex.size = 9,
      edge.width = 1,
      edge.arrow.size = 0.5)
 ```
 
-One final styling example. So far, we have the edges indicate the existence of friendship relationships, which is a binary quality. However, we can also imagine friendship as a continuous variable (from strong = 1 to none = 0). Using the edge function `E()`, we can add attributes to the edges in the network. We can use those to alter the width of edges depending on their relationship strength. To do that, we will first change the adjacency matrix (from binary to continuous values) and then plot the new network.
-<!-- explain runif() -->
+Similar to what we did with the nodes (using colour to represent additional information), we can also let edges represent additional information, for example, the width of the stroke can represent the strength of a relationship. Fatter lines could represent stronger friendships. In real life, you will probably have actual values (from experiments or simulations) that you want to use for each edge. Here, we draw  `r ecount(net)` random values (using the `ecount()` function to count the number of edges) from a Uniform Distribution using the `runif()` function: 
+
 ```{r 11.13}
-# create a copy of the adjacency matrix
-adjm2 <- adjm
-
-# draw random values from a uniform distribution and replace the matrix entries that have a value of 1
-adjm2[upper.tri(adjm2)] <- runif(n = sum(upper.tri(adjm2))) * adjm2[upper.tri(adjm2)]
-
-# copy the mirror image to the lower triangle
-adjm2[lower.tri(adjm2)] <- t(adjm2)[lower.tri(adjm2)]
-
-# create the network
-net2 <- graph_from_adjacency_matrix(adjm2, weighted = TRUE, mode = "undirected")
-net2
+# Create random strength values
+strength <- runif(n = ecount(net), min = 0, max = 1)
+# Assign values to edges
+E(net)$weight <- strength
+net
 ```
 
-Note, igraph automatically added an attribute called `weight`. Now, let's plot this network with the edge width representing their weight:
+We assigned the friendship strength values to an attribute called `weight`. Take a look at the `net` object. It now says `U-W-`, indicating that it is both an **u**ndirected as well as a **w**eighted network. To plot the edge weights, we instruct the plotting function to use the `E(net)$weight` values for the `edge.width` parameter (note that we multiply the values by some value to make the strokes bigger in the final plot):
 
 ```{r 11.14, fig.cap="To indicate different strength in the relationship of two nodes, we can vary the width of edge between them."}
-V(net2)$age <- V(net)$age
-V(net2)$colour <- V(net)$colour
-
-plot(net2, 
-     vertex.color = V(net2)$colour,
-     vertex.label = "",
+set.seed(1)
+plot(net, 
+     vertex.color = V(net)$col, 
+     vertex.label = NA,
      vertex.size = 9,
-     edge.width = E(net2)$weight*5,
+     edge.width = E(net)$weight*5,
      edge.arrow.size = 0.5)
 ```
 
-You can now observe strong and weak relationships between individuals, their location relative to each other, and how they cluster. In the next section, we will try to quantify these observations.
+You can now observe strong and weak relationships between individuals, their location relative to each other, and how they cluster. Let us now look at how to quantify the observed network characteristics.
+
 
 ## Analyse social networks
 There is a variety of measures to describe the structure of our graph (another term for network). We can generally differentiate between properties of the network and properties of the vertices:
