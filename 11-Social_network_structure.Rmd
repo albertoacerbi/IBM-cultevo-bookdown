@@ -245,37 +245,32 @@ You can now observe strong and weak relationships between individuals, their loc
 
 
 ## Analyse social networks
-There is a variety of measures to describe the structure of our graph (another term for network). We can generally differentiate between properties of the network and properties of the vertices:
+To describe networks, a set of specific terms and measures are used. Let us take a look at the most common measures. In principal, we distinguish between two different levels to describe properties that are associated with networks: 
 
-### Network properties 
-We can retrieve the most basic information about our network using:
+* Population-level network properties and
+* Individual-level vertex properties. 
+
+### Network properties and characteristics
+To retrieve the most basic information about our network we can use the `V()` and `E()` function for vertices and edges of a given network.
 ```{r 11.15}
-# vertex information
-V(net2)
-
-# edge information
-E(net2)
+V(net)
+E(net)
 ```
 
-If our networks have attributes stored (for the vertices or edges), we can retrieve them with the following two functions: 
+If our network has attributes associates for its vertices or edges, we can retrieve them with the following two functions: 
 ```{r 11.16}
-# vertex attributes
-get.vertex.attribute(graph = net2)
-
-# edge attributes
-get.edge.attribute(net2)
+get.vertex.attribute(graph = net)
+get.edge.attribute(net)
 ```
+As you can see, there are two attributes associates with the vertices (`age` and `col`) and one with the edges (`weight`).
 
-With `vcount()` and `ecount()`, we can return the number of vertices (`r vcount(net)`) and edges (`r ecount(net)`) in our graph. 
+As mentioned earlier, `vcount()` and `ecount()` are functionts that return the number of vertices and edges of our network:  
 ```{r 11.17}
-# vertex count
 vcount(net)
-
-# edge count
 ecount(net)
 ```
 
-Let us now look at a variety of measures that we can calculate to characterise our network.
+Additional to these descriptive measures, there is a series of measures that need to be calculated:
 
 **Diameter** is a measure for the longest (geodesic) path, i.e. the largest number of steps that are necessary to reach two vertices in a network (using `farthest_vertices()` we can return the ID of the two vertices).
 ```{r 11.18}
@@ -284,44 +279,39 @@ diameter(graph = net)
 
 **Average path length** is the average number of steps that need to be traversed between any two vertices (aka as dyad). We can also use the `distance()` function to return a distance matrix similar to the adjacency matrix.
 ```{r 11.19}
-# average distance between any dyad
 mean_distance(graph = net)
 ```
 
-**Edge density** is the proportion of edges present in the graph relative to the number of possible edges (i.e. in a fully connected network with the same number of nodes).
+**Edge density** is the proportion of edges present in the graph relative to the number of possible edges (i.e. in a fully connected network with the same number of nodes). This is one of the easier calculations, which we could alo write as `sum(adjm>0) / (length(adjm)-ncol(adjm))` using our adjacency matrix. 
 ```{r 11.20}
 edge_density(graph = net)
 ```
 
-**Reciprocity** (relevant for directed graphs only) calculates the proportion of mutual edges. As we have a directed graph, this value is one. 
+**Reciprocity** calculates the proportion of mutual edges relative to all existing edges. This is relevant for directed graphs. As we have an undirected graph, this value is one. 
 ```{r 11.21}
 reciprocity(graph = net)
 ```
 
-**Clustering coefficient** (aka transitivity, or cliquishness) is the probability that the two neighbours of a vertex are neighbours of each other. This is also called a triangle, and often the image of 'my friends are friends with each other' is used.
+**Clustering coefficient** (also referred to as transitivity, or cliquishness) is the probability that the two neighbours of a vertex are neighbours of each other. This is also called a triangle. You can also imagine it as 'my friends are friends with each other'.
 ```{r 11.22}
 transitivity(graph = net)
 ```
 
 
 ### Vertex properties
-Additional to these high-level measures, we can use a series of node-level measures to describe connectivity in more detail:
+Additional to these high-level measures, we can use a series of vertex-level measures. 
 
 **Degree centrality** refers to the number of (incoming/outgoing/both) edges of a vertex. We can use the `degree()` function to determine the degree centrality of each node:
-<!-- explain identical() -->
+
 ```{r 11.23}
 # number of edges that connected with each node
 degree(graph = net)
-
-# as we have an undirected network, the count of incoming and outgoing edges is identical
-identical(degree(graph = net, mode = "in"), 
-          degree(graph = net, mode = "out"))
 
 # we can use the mean of all degree centralities as a general measure for the entire network
 mean(degree(graph = net))
 ```
 
-**Strength** is similar to degree centrality but relevant for weighted networks. It is the sum of all adjacent edge weights (a node might have many edges but with very low weights and so with high degree centrality but low strength). In our case (unweighted network), `degree()` and `strength()` produce the same result:
+**Strength** is similar to degree centrality but relevant for weighted networks. It is the sum of all adjacent edge weights (a node might have many edges but with very low weights and so with high degree centrality but low strength). In the case of an unweighed network, `degree()` and `strength()` would return the same result.
 ```{r 11.24}
 sort(strength(graph = net))
 ```
@@ -330,7 +320,7 @@ sort(strength(graph = net))
 ```{r 11.25}
 closeness(graph = net)
 ```
-Note that the values are $<$1. This is because `igraph` defines closeness centrality as 'the inverse of the average length of the shortest paths to/from all the other vertices in the graph.'
+Note that the values are $<1$. This is because `igraph` defines closeness centrality as 'the inverse of the average length of the shortest paths to/from all the other vertices in the graph.'
 
 **Betweenness centrality** is the number of shortest paths between nodes that pass through a particular node. It is often seen as a measure for a node's gatekeeping or brokerage potential:
 ```{r 11.26}
@@ -341,6 +331,26 @@ betweenness(graph = net)
 ```{r 11.27}
 eigen_centrality(graph = net)$vector
 ```
+
+Sometimes it is good to visualise these characteristics as colour in your network. For example, betweenness centrality can be hard to see by just looking at the graph. Instead of plotting the age of our vertices, we could also plot their network metrics. Here is an example for colouring nodes based on their betweenness centrality:
+
+```{r 11.27, fig.cap="Example graph where nodes are coloured based on their betweenness centrality. "}
+between <- betweenness(graph = net)
+col <- heat.colors(n = max(between)+1, rev = TRUE)[between+1]
+# Plot network with col
+set.seed(1)
+plot(net, 
+     vertex.color = col, 
+     vertex.label = between,
+     vertex.label.color = "black",
+     vertex.size = 20,
+     edge.color = "black",
+     edge.width = 1,
+     edge.arrow.size = 0.5,
+     main = "Betweenness centrality")
+```
+
+
 
 ## Using social networks to model information transmission
 Now that we know how to generate, plot, and analyse networks: how can we use them in the context of information sharing. Or to come back to our initial example, the spread of gossip? Let us start with a very simple model: we initiate the simulation be endowing one individual with a piece of information (or gossip). We then simulate how many time steps it will take until the information has spread through the entire network. 
