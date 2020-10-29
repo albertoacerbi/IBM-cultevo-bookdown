@@ -350,220 +350,150 @@ plot(net,
      main = "Betweenness centrality")
 ```
 
+Now that we know how to generate, plot, and analyse networks, we can move on to use them in a social learning context. 
 
 
-## Using social networks to model information transmission
-Now that we know how to generate, plot, and analyse networks: how can we use them in the context of information sharing. Or to come back to our initial example, the spread of gossip? Let us start with a very simple model: we initiate the simulation be endowing one individual with a piece of information (or gossip). We then simulate how many time steps it will take until the information has spread through the entire network. 
+## Modelling information transmission in social networks
+The diffusion of information in social networks differs from the diffusion in well-mixed populations (see our earlier chapters) in that the individual does only have access to the information of her direct network neighbours, i.e. those they share edges with. In comparison, in well-mixed populations (equivalent to a fully connected network) every individual is equally likely to interact with any other individual, and so has access to information from the entire population. Thus, when modelling transmission in social networks, we have to take into account that an individual can only sample from its social environment and not from the entire population (which we have done in the earlier chapters, like the biased and unbiased transmission). Instead, we have to simulate neighbourhood sampling for each node individually. 
 
-### Gossip transmission on networked populations
-```{r 11.28}
-# set up vector that stores whether an individual possesses the latest gossip:
-gossip_meter <- rep(FALSE, n)
-gossip_meter
+In this part of the chapter, we will first develop a function to simulate the spread of gossip in networks of varying degree centrality. This will give us a better understanding of the effect of edge density onto the diffusion speed. This is a simple model that you can alter to test other network characteristics (e.g. diameter or betweenness centrality). With the second model, we will simulate different ways of information diffusion (i.e. simple versus complex contagion) and test how network transitivity and the mode of transmission interact. 
 
-# choose a random individual to start gossiping
-gossip_meter[sample(x = n, size = 1)] <- TRUE
-gossip_meter
 
-# choose an individual with gossip
-if(sum(gossip_meter) == 1){
-  gossip_provider <- which(gossip_meter)
-} else {
-  gossip_provider <- sample(x = which(gossip_meter), size = 1)
-}
+### Gossip diffusion in networked populations
+Let us develop a model that simulates the spread of gossip in a group of people. We will assume that a proportion $f$ of the population are friends with each other and thus share an edge. Gossip can spread between two connected individuals if they randomly encounter each other. Gossip spreads from individuals that have gossip to those who do not. Eventually all individuals will possess the gossip (so long as they are connected to a group of individuals where at least one individual has gossip). 
 
-# choose a neighbour in the network
-neighbours <- which(adjm[gossip_provider,] == 1)
+Which elements do we need for this model? First, we need to keep track which individual has previously received the gossip (we will use a vector called `gossip` of length $N$ where `TRUE` indicates the possession of gossip). Second, we need an adjacency matrix that describes the connections in our network (this is stored in `adjm` and created using the `create_network(')` function that we set up earlier in this chapter). Third, we will need a reporting variable to keep track how the proportion of the population in possession of gossip changes over time. This can be a simple vector of length `r_max`, i.e. the number of rounds. We will call this reporting vector `proportion`. And finally, we need a simulation loop that executed the following three steps:
 
-# only execute if there is a neighbour
-if(length(neighbours) > 0){
-  # choose one neighbour if several are present
-  if(length(neighbours) == 1){
-    neighbour <- neighbours
-  } else {
-    neighbour <- sample(x = neighbours, size = 1)
-  }
-  # update gossip indicator of the neighbour
-  gossip_meter[neighbour] <- TRUE
-}
-gossip_meter
-```
+1. In random sequence select the neighbourhood of each node
+2. If the focal individual has at least one neighbour, select one random neighbour
+3. If that neighbour has gossip, change the focal individual's gossip indicator to `TRUE`
 
-This is already sufficient to simulate the spread of gossip on a network. In the next step, let us loop over these instructions and record the number of time steps it takes until everyone received the gossip. But first, we should write a different `sample()` function, as the generic function misbehaves with samples of length equal to one. We will use the following: 
+We repeat these steps for `r_max` number of rounds. At the end of all rounds we return a `tibble` where we will store the proportion of the population with gossip at each round, as well as the value of $f$ and the `sim` argument. This is the counter of our simulation. At the moment we only run one simulation at a time, so we set this argument to be one, i.e. `sim = 1` in the function definition. We will see that this counter can be useful when we run repeated simulations later. 
+
 
 ```{r 11.29}
-mySample <- function(x, prob = NULL){
+library(tidyverse)
+gossip_model <- function(N, f, r_max, sim = 1){
+  # Create a vector indicating possession of gossip and set one entry to TRUE
+  gossip <- rep(FALSE, N)
+  gossip[sample(x = N, size = 1)] <- TRUE
+  # Create a network
+  adjm <- create_network(N = N, f = f)
+  # Create a reporting variable
+  proportion <- rep(0, r_max)
+
+  # Rounds
+  for(r in 1:r_max){
+    # In random sequence go through all individuals without gossip
+    for(i in sample(N)){
+      # Select i's neighbourhood
+      nei <- adjm[i,] > 0
+      # Proceed if there is at least one neighbour
+      if(sum(nei) > 0){
+        # Choose one random neighbour, j
+        j <- sampling(x = which(nei), size = 1)
+        # Set i's gossip indicator to TRUE if j's indicator is TRUE
+        if(gossip[j]){
+          gossip[i] <- TRUE
+        }
+      }
+    }
+    # Record proportion of the population with gossip
+    proportion[r] <- sum(gossip) / N
+    # Increment the round counter
+    r <- r + 1
+  }
+  # Return a tibble with simulation results
+  return(tibble(time = 1:r_max, proportion = proportion, f = f, sim = sim))
+}
+```
+
+Going through this function, you will find to functions that are not part of R. The first is `create_network()`, which we created earlier. The second one is called `sampling()`. This is a wrapper function for the generic `sample()` function. What we want the sample function to do is to return one random value of a vector $x$ of length $n$. This works well as long as $n>1$. If $n=1$, we would expect `sample(x)` to return `x`. However, what you will find if you try this is that `sample()` will return a random sequence of the values `1:x`. So, if `x = 5`, `sample(x)` will return e.g. `r sample(5)`. What we could do to receive the desired outcome is to write a function that returns `x` whenever $n=1$ and in all other cases uses the `sample()` function. This function could look like the following: 
+
+```{r 11.28}
+sampling <- function(x, size = length(x), prob = NULL){
   if(length(x) == 1){
     return(x)
   } else {
-    return(sample(x = x, size = 1, prob = prob))
+    return(sample(x = x, size = size, prob = prob))
   }
 }
 ```
 
-Now we can use this simpler version of the sampling function (which is directly tailored to our needs), replace it in the code above, and add a `for` loop: 
+We can now run our simulations for networks with different degree centrality. We will vary the average number of friends an individual has in the population. If there are $N$ individuals and an individual has on average two friends then the probability of two individuals sharing an edge is $f=2/N$, and so on. 
 
-```{r 11.30}
-library(tidyverse)
-# total number of turns to loop over
-Turns <- 50
-
-# a matrix to record how many individuals have the gossip at time x
-res <- tibble(turn = 1:Turns, gossipers = rep(0, Turns))
-
-# set up gossip indicator
-gossip_meter <- rep(FALSE, n)
-
-# choose a random individual to start gossipping
-gossip_meter[sample(x = n, size = 1)] <- TRUE
-
-for(turns in 1:Turns){
-  res[turns,2] <- sum(gossip_meter)/n
-  # choose an individual with gossip
-  gossip_provider <- mySample(which(gossip_meter))
-  
-  # choose a neighbour in the network
-  neighbours <- which(adjm[gossip_provider,] == 1)
-  
-  # only execute if there is a neighbour
-  if(length(neighbours) > 0){
-    # choose one neighbour ...
-    neighbour <- mySample(neighbours)
-    # and update its gossip indicator
-    gossip_meter[neighbour] <- TRUE
-  }
-}
-
-# have a look at the time course
-res$turn
+```{r 11.29, cache=TRUE}
+N <- 1000
+set.seed(3)
+data <- lapply(X = c(1/N, 2/N, 3/N, 5/N, 8/N, 10/N), 
+              FUN = function(f) gossip_model(N = N, f = f, r_max = 50))
+data_bnd <- bind_rows(data)
 ```
 
+As in the previous chapter, we use the `lapply()` function to run several independent simulations. The resulting `data` object is a list of `tibbles`. It is easier to plot the results if we could stack them all on top of each other into a single large `tibble`. We can do this using the `bind_rows()` function. We now can use a simple `ggplot()` line plot to see how the frequency of gossip in populations with different degree centrality changes over time:
 
-```{r 11.301, fig.cap="Gossip spreads first quickly and then more slowly throughout a population."}
-# plot result
-library(ggplot2)
-ggplot(res) + 
-  geom_line(aes(x = turn, y = gossipers)) +
+```{r 11.30, fig.cap="Gossip spreads first quickly and then more slowly throughout a population."}
+ggplot(data_bnd) + 
+  geom_line(aes(x = time, y = proportion, col = factor(round(f*N)))) + 
   ylab("prop. of pop. with gossip") +
   theme_bw()
 ```
 
-Let us adapt the code so that we can run it repeatedly, to get a better feeling for the average amount of time it takes for the information to spread. 
+We can see that there is a big difference between 1 and 2 friends on average but very small between 8 and 10. It is also good to see that 50 turns are sufficient for our system to reach an equilibrium. 
 
-```{r 11.31}
-gossip_model_1 <- function(ADJM, TURNS, SIM = 1){
-  n <- nrow(ADJM)
-  # a matrix to record how many individuals have the gossip at time x
-  res <- tibble(turn = 1:TURNS, gossipers = rep(0, TURNS))
-  # set up gossip indicator
-  gossip_meter <- rep(FALSE, n)
-  # choose a random individual to start gossiping
-  gossip_meter[sample(x = n, size = 1)] <- TRUE
-  
-  for(turns in 1:TURNS){
-    res[turns,2] <- sum(gossip_meter)/n
-    # choose an individual with gossip
-    gossip_provider <- mySample(which(gossip_meter))
-    # choose a neighbour in the network
-    neighbours <- which(ADJM[gossip_provider,] == 1)
-    # only execute if there is a neighbour
-    if(length(neighbours) > 0){
-      # choose one neighbour ...
-      neighbour <- mySample(neighbours)
-      # and update its gossip indicator
-      gossip_meter[neighbour] <- TRUE
-    }
-  }
-  res$simulation <- SIM
-  return(res)
-}
+We should run the simulation more than once and average the results. That way, we can say more definitely how average degree affects the speed and level of spread. We can also measure how long it takes for some gossip to spread in more than, say, $75\%$ of the population. Again, we will use an `lapply()` function to run our simulations. Note that this time, we use an indicator `i` to number the current simulation run (by setting `sim = i`). This way, we can keep the results from repeated simulation runs with the same starting parameters separate from each other. 
+
+```{r 11.31, cache=TRUE}
+N <- 100
+f <- rep(c(1/N, 2/N, 3/N, 5/N, 8/N, 10/N), each = 10)
+
+set.seed(5)
+data <- lapply(X = 1:length(f), 
+              FUN = function(i) gossip_model(N = N, f = f[i], r_max = 50, sim = i))
 ```
 
-With this function of our model, we can easily re-run the simulation several times and receive the time trajectories for each simulation:
+Now we bind the resulting `tibbles` into a single object and plot the simulation results. Note that we are now using the `sim` counter as input for the `group` argument in `geom_line()`. This tells `ggplot` to draw a line only between those points that belong to the same group, i.e. the same simulaiton run:
 
-```{r 11.32, cache=TRUE}
-data <- do.call("rbind", lapply(1:100, function(sim){
-  gossip_model_1(ADJM = adjm, TURNS = 100, SIM = sim)
-}))
-```
-
-Here, we are using an additional new function, `do.call()`. This is a wrapper function that repeatedly applies a function to the individual elements of an object and then returns the result. In this case, we want to bind all the rows (therefore using `ribnd()`) of the list object that `lapply()` returns. `do.call()` takes the first list element and applies `rbind()` to it and the second element. In the next step it takes the resulting (now longer) data set and binds the rows of the next list element, and so on. After binding all the rows together, we can use the returned `data` object and plot it using `ggplot`. 
-
-```{r 11.33, fig.cap="Repeated runs of the gossip simulation shows the asymptotic spread of gossip in a population."}
-ggplot(data) + 
-  geom_line(aes(x = turn, y = gossipers, group = simulation), alpha = .2) +
+```{r 11.31, fig.cap=""}
+data_bnd <- bind_rows(data)
+ggplot(data_bnd) +
+  geom_line(aes(x = time, y = proportion, col = factor(f*N), group = factor(sim))) + 
   ylab("prop. of pop. with gossip") +
   theme_bw()
 ```
 
-We can see that the initial spread is very fast and then tapers off. At the beginning there are a lot of individuals who do not have the gossip and transmission will be successful. However, the more individuals with the gossip there are, the less likely it is to find someone who does not yet have the gossip. How does this result compare to simulations with a fully connected network (i.e. where every individual is equally likely to interact with any other individual)?
+As can see, each simulation run is a bit different even of they have the same starting parameter. Let us plot the proportion of population with gossip in the last simulation step for each degree centrality: 
 
-To make the creation of networks easier, let us write down a function to generate networks as we have done before:
-<!-- you should have this function much earlier!--> 
-```{r 11.34}
-create_network <- function(N, FRIENDSHIPRATIO){
-  adjm <- matrix(0, ncol = N, nrow = N)
-  adjm[upper.tri(adjm)] <- sample(x = 0:1, 
-                                  size = N*(N-1)/2, 
-                                  replace = TRUE, 
-                                  prob = c(1-FRIENDSHIPRATIO, FRIENDSHIPRATIO))
-  adjm[lower.tri(adjm)] <- t(adjm)[lower.tri(adjm)]
-  return(adjm)
-}
-```
-
-Now we can create a fully connected network, run the gossip model on it, and plot the results:
-<!--recall how lapply function works form chapter 10-->
-```{r 11.35, cache=TRUE}
-adjm_full <- create_network(N = n, FRIENDSHIPRATIO = 1)
-
-data_full <- do.call("rbind", 
-                     lapply(1:100, function(sim){
-                       gossip_model_1(ADJM = adjm_full, TURNS = 100, SIM = sim)
-                       })
-                     )
-```
-
-<!--explain geom_smooth-->
-
-```{r 11.36, fig.cap="Gossip spreads faster in a fully connected network, compared to a less connected network.", message=FALSE}
-data$type <- "colleague network"
-data_full$type <- "fully connected"
-data_combined <- rbind(data, data_full)
-
-ggplot(data_combined) + 
-  geom_point(aes(x = turn, y = gossipers, color = type), alpha = .05) +
-  geom_smooth(aes(x = turn, y = gossipers, color = type)) +
+```{r 11.31, fig.cap=""}
+data_bnd_last <- data_bnd[data_bnd$time == max(data_bnd$time), ]
+ggplot(data_bnd_last) + 
+  geom_boxplot(aes(x = (f*N), y = proportion, fill = factor(f*N))) + 
+  xlab("average number of friends") +
   ylab("prop. of pop. with gossip") +
   theme_bw()
 ```
 
-This plot shows that the fully connected network reaches saturation a little bit faster than the colleague network. The difference becomes even more obvious when we re-run this simulation with larger networks:
+You can see that as degree centrality increases a larger proportion of the population will have gossip after 50 simulation rounds. The increase is very strong initially and then levels of quickly after an average degree of 3. 
 
-```{r 11.37, cache=TRUE}
-adjm_colleagues <- create_network(N = 25, FRIENDSHIPRATIO = .20)
-adjm_full <- create_network(N = 25, FRIENDSHIPRATIO = 1)
+Another metric we can look at is the number of rounds until $75\%$ of the population are in possession of gossip. For this, we will go through each individual simulation run, that is, each list element stored in `data`, and select the first `time` step where `proportion >= 0.75`. Note that some simulations do not reach this $75\%$ and the resulting value will be `NA`. One way to deal with these is to disregard these simulations. Another one is to set all `NA` values to `r_max`, in our case 50. 
 
-data_colleagues <- do.call("rbind", lapply(1:100, function(sim){
-  gossip_model_1(ADJM = adjm_colleagues, TURNS = 100, SIM = sim)
-}))
+```{r 11.31, fig.cap=""}
+data_bnd_time <- lapply(data, function(dat){
+  tibble(dat[1,], time_to_x = which(dat[,"proportion"] >= 0.75)[1])
+}) %>% bind_rows()
 
-data_full <- do.call("rbind", lapply(1:100, function(sim){
-  gossip_model_1(ADJM = adjm_full, TURNS = 100, SIM = sim)
-}))
-```
+data_bnd_time$time_to_x[is.na(data_bnd_time$time_to_x)] <- 50
 
-```{r 11.38, fig.cap="When networks are larger, gossip spreads even faster in fully connected networks. Note that there are some simulations where gossip does not spread (red dotes at the bottom). This happens when a simulation begins with an individual, who is in possession of gossip, but does not share a connection with any other individual in the population.", message=FALSE}
-data_colleagues$type <- "colleague network"
-data_full$type <- "fully connected"
-data_combined2 <- rbind(data_full, data_colleagues)
-
-ggplot(data_combined2) + 
-  geom_point(aes(x = turn, y = gossipers, color = type), alpha = .05) +
-  geom_smooth(aes(x = turn, y = gossipers, color = type)) +
-  ylab("prop. of pop. with gossip") +
+ggplot(data_bnd_time) + 
+  geom_boxplot(aes(x = (f*N), y = time_to_x, fill = factor(f*N))) + 
+  xlab("average number of friends") +
+  ylab("Time to spread to 75% of population") +
   theme_bw()
 ```
+
+Now, we can say that with increasing degree centrality information (or gossip) does not only spread to larger proportions of a population but it does so faster. This is true for the random network the we have tested here. With the next model we will take a closer look at clustered networks. 
+
+
 
 
 
