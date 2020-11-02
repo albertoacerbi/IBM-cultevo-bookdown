@@ -491,133 +491,98 @@ ggplot(data_bnd_time) +
   theme_bw()
 ```
 
-Now, we can say that with increasing degree centrality information (or gossip) does not only spread to larger proportions of a population but it does so faster. This is true for the random network the we have tested here. With the next model we will take a closer look at clustered networks. 
+Now, we can say that with increasing degree centrality information (or gossip) does not only spread to larger proportions of a population but it does so faster. This is true for the random networks the we have tested here. However, as we mentioned earlier, there are many different network categories that differ in degree distribution, average path length, clustering, and others. With the next model, we will take a closer look at the effect of clustering. 
 
 
 
 
+### Complex versus simple contagion information transmission
 
-### How does network structure affect information transmission?
-While the previous example has shown us the difference in the transmission speed of information in a structured versus an unstructured population (i.e. the fully connected network which is equivalent to a well-mixed population), we still do not know how network characteristics affect the transmission of information. To get a better understanding of it, we will simulate the transmission of information in networks of different sizes and connectivity. Here, we will simulate Small-World networks (also known as Watts-Strogatz graphs). These are networks that are characterised by high clustering and short average path length. 
+The spread of information is not only affected by the network shape but also by the mode of information transmission. That is, often information is not transmitted from one individual to another in a simple contagion like manner, where exposure to one informed individual is sufficient, but instead requires increased social facilitation. In other words, often we are more likely to acquire behaviours from others if this behaviour is more frequent in our neighbourhood. This kind of transmission is called complex contagion (see e.g. @centola_spread_2010). 
 
-For this type of analysis we do not need to record each time step, instead, we can let our function return the time step at which, e.g. 75\% of the population have heard the gossip:
+What is happening here?
 
-```{r 11.39}
-gossip_model_2 <- function(ADJM, PROP, TURNS, SIM = 1){
-  n <- nrow(ADJM)
-  # set up gossip indicator
-  gossip_meter <- rep(F, n)
-  # choose a random individual to start gossipping
-  gossip_meter[sample(x = n, size = 1)] <- TRUE
-  
-  timestep <- NA
-  for(turns in 1:TURNS){
-    # record the time step when a defined proportion of the population has the gossip
-    if(sum(gossip_meter)/n >= PROP & is.na(timestep)){
-      timestep <- turns 
+In the previous iteration of `gossip_model()`, we select a random neighbour, $j$, of a focal individual $i$. If $j$ has gossip then $i$ will acquire the gossip with certainty. Say, $i$ has 3 neighbours of which only one has gossip. The probability to acquire gossip within the next round, $p_g$, is $1/3$, as there is a one in three chance that we randomly pick the neighbour with gossip. So, instead of:
+```{r, eval=FALSE}
+j <- sampling(x = which(nei), size = 1)
+if(gossip[j]){
+  gossip[i] <- TRUE
+}
+```
+we could also write:
+```{r, eval=FALSE}
+if(runif(n = 1, min = 0, max = 1) <= (sum(nei)/length(nei))){
+  gossip[i] <- TRUE
+}
+```
+what is happening here? The `if` statement is true if a value that is randomly drawn from a uniform distribution (that is what `runif()` is doing), is smaller or equal to the number of neighbours with gossip (`sum(nei)`), relative to the number of neighbours (`length(nei)`). As you can see, the probability that $i$ acquires gossip scales linearly with the proportion of neighbours with gossip. This is what is usually referred to as simple contagion. In complex contagion, however, we might say that an individual needs to be exposed to gossip repeatedly. We can then write: 
+```{r, eval=FALSE}
+if(runif(n = 1, min = 0, max = 1) <= (sum(nei)/length(nei))^2){
+  gossip[i] <- TRUE
+}
+```
+to say that successful acquisition requires at least two exposures. ...
+
+To visualise this: 
+
+```{r, fig.cap="..."}
+prop_nei_info <- seq(from = 0, to = 1, length.out = 10)
+contagion <- tibble(
+  contagion = rep(c("simple", "complex"), each = 10),
+  x = rep(prop_nei_info, 2), 
+  y = c(prop_nei_info, prop_nei_info^2))
+
+ggplot(contagion) + 
+  geom_point(aes(x = x, y = y, col = contagion)) +
+  xlab("proportion of neighbours with info") + 
+  ylab("probability to acquire info") +
+  theme_bw()
+```
+
+
+But how does simple and complex contagion affect the spread of information? To model this, we will modify our can write a small model where we randomly select individuals and check whether they acquire information from their social contacts based on a threshold value, i.e. the number of contacts required to acquire information. 
+
+Let us start with a model of simple contagoin (requires only one social contact that possesses a new beahviour or information to acquire it):
+
+
+
+```{r}
+gossip_model_2 <- function(N, f, r_max, sim = 1){
+  # Create a vector indicating possession of gossip and set one entry to TRUE
+  gossip <- rep(FALSE, N)
+  gossip[sample(x = N, size = 1)] <- TRUE
+  # Create a network
+  adjm <- create_network(N = N, f = f)
+  # Create a reporting variable
+  proportion <- rep(0, r_max)
+
+  # Rounds
+  for(r in 1:r_max){
+    # In random sequence go through all individuals without gossip
+    for(i in sample(N)){
+      # Select i's neighbourhood
+      nei <- adjm[i,] > 0
+      # Proceed if there is at least one neighbour
+      if(sum(nei) > 0){
+        # Choose one random neighbour, j
+        j <- sampling(x = which(nei), size = 1)
+        # Set i's gossip indicator to TRUE if j's indicator is TRUE
+        if(gossip[j]){
+          gossip[i] <- TRUE
+        }
+      }
     }
-    # choose an individual with gossip
-    gossip_provider <- mySample(which(gossip_meter))
-    # choose a neighbour in the network
-    neighbours <- which(ADJM[gossip_provider,] == 1)
-    # only execute if there is a neighbour
-    if(length(neighbours)>0){
-      # choose one neighbour ...
-      neighbour <- mySample(neighbours)
-      # and update its gossip indicator
-      gossip_meter[neighbour] <- TRUE
-    }
+    # Record proportion of the population with gossip
+    proportion[r] <- sum(gossip) / N
+    # Increment the round counter
+    r <- r + 1
   }
-  # if PROP is not reached, return the maximum value
-  if(is.na(timestep)){
-    timestep <- TURNS
-  }
-  return(timestep)
+  # Return a tibble with simulation results
+  return(tibble(time = 1:r_max, proportion = proportion, f = f, sim = sim))
 }
 ```
 
-By default, this function will return the maximum turn number, if the set target proportion is not reached (however, we could also let the function return a different value or a character expression, such as `MAX`).
 
-```{r 11.40}
-adjm <- create_network(N = 50, FRIENDSHIPRATIO = .25)
-gossip_model_2(ADJM = adjm, PROP = .75, TURNS = 100, SIM = 1)
-```
-When you run d
-
-Now, let us run these functions for different group sizes and different connectivities, and let us repeat these simulations several times to get a better estimate:
-<!--recall how expand.grid works-->
-```{r 11.41, cache=TRUE}
-parameters <- expand.grid(groupSize = c(10,50),#c(10,30,50,70,90),
-                          reconnections = c(0,.01,.05,.1,.5,1),
-                          repetition = 1:50)
-tmp <- lapply(1:nrow(parameters), function(p){
-  net <- watts.strogatz.game(dim = 1, size = parameters[p,"groupSize"], nei = 2, 
-                             p = parameters[p,"reconnections"], loops = FALSE, 
-                             multiple = FALSE)
-  adjm <- get.adjacency(net)
-  model <- gossip_model_2(ADJM = adjm, PROP = .5, TURNS = 500, 
-                          SIM = parameters[p,"repetition"])
-  tibble(time = model, 
-             degree = mean(degree(net)), 
-             path = average.path.length(net))
-})
-
-tmp2 <- do.call("rbind", tmp)
-parameters <- cbind(parameters, tmp2)
-```
-
-To plot the average time of our repeated simulations, we need to first calculate this average:
-<!--explain what is happening here-->
-```{r 11.42}
-library(tidyverse)
-parameters %>% 
-  group_by(groupSize, reconnections) %>% 
-  summarise(meanTime = mean(time), 
-            meanDegree = mean(degree),
-            meanPath = mean(path)) -> data
-```
-
-Let us have a look at both the average network degree and the average path length of the networks:
-<!--explain why you use factor()-->
-```{r 11.43, fig.cap="Based on how small world networks are created, the average network degree remains unchanged even if the probability of reconnection increases. Note that we use the plotting function `geom_jitter()` which works just like `geom_point()` but is also adding a little y-axis jitter to the points so that we can see overlapping points."}
-parameters$groupSize <- factor(parameters$groupSize)
-
-ggplot(parameters, aes(x = reconnections, y = degree, col = groupSize)) + 
-  geom_jitter(height = .01, alpha = .5) +
-  scale_y_continuous(limits = c(3.5,4.5)) +
-  xlab("prob. of reconnection") +
-  ylab("average degree") +
-  theme_bw()
-```
-
-Note, the average network degree is constant at $k =$ `r mean(parameters$degree)`. This is due to the way Small World Networks are created. We start with a regular lattice network and then randomly select an edge and change the vertex on one end (e.g. from A--B to A--C). Thus, while some individuals might now have fewer (or even zero) edges and others might have more, the average number of edges and so the average degree remains fixed an independent of the number of rewired edges.
-
-```{r 11.44, fig.cap="In larger populations average path length is longer when reconnection prbability is low. For smaller populations we do not see this effect at all."}
-ggplot(parameters, aes(x = reconnections, y = path, col = groupSize)) + 
-  geom_point() + 
-  xlab("prob. of reconnection") +
-  ylab("average path length") +
-  theme_bw()
-```
-
-This, however, is not true for the path length. Instead, we find that larger networks (with otherwise the same network parameters) have longer average path lengths (i.e. it takes on average more steps to get from one to another individual). Also, as we increase the probability to reconnect edges average path length goes down. This is because random connections might connect distant sections of the network and so drastically lower the number of steps required to get from one individual to another. 
-
-```{r 11.45, fig.cap="In larger populations, and especially in those with longer average path length, it takes longer for information to spread than in smaller populations or those with shorter average path length."}
-ggplot(parameters, aes(x = path, y = time, col = groupSize)) + 
-  geom_point(alpha = .33) + 
-  xlab("average path length") +
-  ylab("time") +
-  theme_bw()
-```
-
-From this graph, we can see that the spread of information decreases as networks become larger and as average path length increases. 
-
-
-### Complex versus simple contagion
-
-The spread of information is not only affected by the network shape but also by the manner of information transmission. That is, often information is not simply transmitted from one individual to another in a simple contagion like manner but instead requires increased social facilitation. This can both be repeated exposure to the information or a certain proportion of social partners who possess this information. In other words, often we are more likely to acquire behaviours from others if this behaviour is more frequent in our neighbourhood. This kind of transmission is called complex contagion (see e.g. @centola_spread_2010). But how does simple and complex contagion affect the spread of information? To model this, we can write a small model where we randomly select individuals and check whether they acquire information from their social contacts based on a threshold value, i.e. the number of contacts required to acquire information. 
-
-Let us start with a model of simple contagoin (requires only one social contact that possesses a new beahviour or information to acquire it):
 
 ```{r 11.46, cache=TRUE}
 informationSpread <- function(ADJM, MODE = "simple", ROUNDS = 100, CONTACTS = 1){
