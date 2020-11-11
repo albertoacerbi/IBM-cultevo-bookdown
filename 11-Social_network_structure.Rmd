@@ -6,7 +6,6 @@ For mathematical tractability models often assume well-mixed populations, where 
 ## Network basics
 Networks are a popular tool to visualise relationships between different actors. For example, co-authorship networks typically visualise which authors frequently publish articles together, ecological networks demonstrate trophic interactions between different species, and kinship networks show how individuals are related to each other. All networks are comprised of at least two components: 'nodes' (also referred to as vertex, _pl._ vertices), which represent actors, and 'ties' (also referred to as edges) between any two nodes, which represent the existence of a relationship (e.g. co-authorship, kinship, cooperation, etc.). 
 
-<!--Update all chunk numbers! -->
 ```{r 11.1, echo=FALSE, fig.cap="Example network."}
 library(igraph)
 A <- matrix(c(0,1,1,0, 0,0,1,0, 1,0,0,1, 0,0,1,0), nrow = 4, byrow = TRUE)
@@ -61,6 +60,7 @@ isSymmetric(random_matrix)
 ## Generating networks
 Networks can vary widely depending on what they represent, or what their purpose is if they are simulate from scratch. Fig @ref{11.3.1} shows a few different types of networks that require different methods to create. A simple way to generate certain types of networks with, say, different number of nodes and edges, is to use one of the many functions provided by the `igraph` package. For example, the ring graph above can be generated with this simple command: `make_ring(n=10)`. 
 
+<!--@Alberto, the following code chunk will only display a figure, not the code.-->
 ```{r 11.6, echo=FALSE, message=FALSE, fig.cap="Different graph types (from left: circle, lattice, random, scale free, fully connected) vary in the density and distribution of edges between nodes."}
 library(igraph)
 parbefore <- par()$mar
@@ -83,13 +83,13 @@ For certain projects, these standard networks might not be sufficient, for examp
 
 ```{r 11.7}
 create_network <- function(N, f){
-  # set up an empty adjacency matrix of size NxN
+  # Set up an empty adjacency matrix of size NxN
   A <- matrix(0, ncol = N, nrow = N)
-  # set up a friendship counter
+  # Set up a friendship counter
   friends <- 0
   
-  # we will add friendships until we reach the desired number
-  while(friends < round((((N^2)-N)/2) * f)){
+  # We will add friendships until we reach the desired number
+  while(friends < round((((N^2) - N) / 2) * f)){
     dyad <- sample(x = N, size = 2, replace = FALSE)
     i <- dyad[1]
     j <- dyad[2]
@@ -116,9 +116,6 @@ Our new function allows us to create a variety of different networks. Let us now
 To visualise a network nodes and edges have to be placed in the correct relation to each other on an empty canvas. Because there is a lot of calculation going into this, we will use the plotting features that come with the `igraph` package. This package requires the network to be an `IGRAPH` object. So first, we will have to turn our adjacency matrix into a network. The function `graph_from_adjacency_matrix()` is going to do this for us: 
 
 ```{r 11.9}
-# adj <- create_network(N = 20, f = .15)
-# net <- graph_from_adjacency_matrix(adj)
-# plot(net, vertex.label=NA, vertex.color="#18889F", edge.color="#33333B", vertex.size=3, edge.arrow.size=.1)
 net <- graph_from_adjacency_matrix(adjm)
 net
 ```
@@ -137,9 +134,11 @@ This is the most basic network plot where each node (with the numbers 1 to `r vc
 There are also ways to plot networks in entirely different layouts. In the following graph, for example, we put nodes in a ring layout or on a grid. We use the different `layout.x()` functions in `ìgraph` in combination with the `layout=` argument of the plotting function. 
 
 ```{r 11.11, fig.cap="Example for two different network layouts, the grid and the ring."}
+# Set the plotting environment to allow 2 plots next to each other
 par(mfrow = c(1,2))
 plot(net, layout = layout.circle(net), main = "Ring layout")
 plot(net, layout = layout.grid(net), main = "Grid layout")
+# Reset the plotting environment to a single plot
 par(mfrow = c(1,1))
 ```
 
@@ -303,10 +302,10 @@ Additional to these high-level measures, we can use a series of vertex-level mea
 **Degree centrality** refers to the number of (incoming/outgoing/both) edges of a vertex. We can use the `degree()` function to determine the degree centrality of each node:
 
 ```{r 11.27}
-# number of edges that connected with each node
+# Number of edges that connected with each node
 degree(graph = net)
 
-# we can use the mean of all degree centralities as a general measure for the entire network
+# The mean of all degree centralities is a general measure of network connectivity
 mean(degree(graph = net))
 ```
 
@@ -335,7 +334,7 @@ Sometimes it is good to visualise these characteristics as colour in your networ
 
 ```{r 11.32, fig.cap="Example graph where nodes are coloured based on their betweenness centrality. "}
 between <- betweenness(graph = net)
-col <- heat.colors(n = max(between)+1, rev = TRUE)[between+1]
+col <- heat.colors(n = max(between) + 1, rev = TRUE)[between + 1]
 # Plot network with col
 set.seed(1)
 plot(net, 
@@ -380,9 +379,9 @@ gossip_model <- function(N, f, r_max, sim = 1){
   # Create a reporting variable
   proportion <- rep(0, r_max)
 
-  # Rounds
+  # Loop over r_max rounds
   for(r in 1:r_max){
-    # In random sequence go through all individuals without gossip
+    # In random sequence go through all individuals 
     for(i in sample(N)){
       # Select i's neighbourhood
       nei <- adjm[i,] > 0
@@ -432,7 +431,7 @@ As in the previous chapter, we use the `lapply()` function to run several indepe
 
 ```{r 11.36, fig.cap="Gossip spreads first quickly and then more slowly throughout a population."}
 ggplot(data_bnd) + 
-  geom_line(aes(x = time, y = proportion, col = factor(round(f*N)))) + 
+  geom_line(aes(x = time, y = proportion, col = factor(round(f * N)))) + 
   ylab("prop. of pop. with gossip") +
   theme_bw()
 ```
@@ -455,7 +454,7 @@ Now we bind the resulting `tibbles` into a single object and plot the simulation
 ```{r 11.38, fig.cap="Repeated runs of `gossip_model()` show that on average gossip spreads to less than $0.2$ of the popualtion if individauls have on average 1 friend. For 2 and more friends gossip spreads to more than three quarter in the populaiton."}
 data_bnd <- bind_rows(data)
 ggplot(data_bnd) +
-  geom_line(aes(x = time, y = proportion, col = factor(f*N), group = factor(sim))) + 
+  geom_line(aes(x = time, y = proportion, col = factor(f * N), group = factor(sim))) + 
   ylab("prop. of pop. with gossip") +
   theme_bw()
 ```
@@ -465,7 +464,7 @@ As can see, each simulation run is a bit different even of they have the same st
 ```{r 11.39, fig.cap="Here we plot the end points of each simulation from the previous plot as a boxplot. This, again, shows that there is a dramatic difference of diffusion in networks with 1 to 3 friends, but far less in those with 5 and more friends."}
 data_bnd_last <- data_bnd[data_bnd$time == max(data_bnd$time), ]
 ggplot(data_bnd_last) + 
-  geom_boxplot(aes(x = (f*N), y = proportion, fill = factor(f*N))) + 
+  geom_boxplot(aes(x = (f * N), y = proportion, fill = factor(f * N))) + 
   xlab("average number of friends") +
   ylab("prop. of pop. with gossip") +
   theme_bw()
@@ -483,7 +482,7 @@ data_bnd_time <- lapply(data, function(dat){
 data_bnd_time$time_to_x[is.na(data_bnd_time$time_to_x)] <- 50
 
 ggplot(data_bnd_time) + 
-  geom_boxplot(aes(x = (f*N), y = time_to_x, fill = factor(f*N))) + 
+  geom_boxplot(aes(x = (f * N), y = time_to_x, fill = factor(f * N))) + 
   xlab("average number of friends") +
   ylab("Time to spread to 75% of population") +
   theme_bw()
@@ -507,14 +506,14 @@ if(gossip[j]){
 ```
 we could also write:
 ```{r 11.42, eval=FALSE}
-p_g <- sum(gossip*nei)/length(nei)
+p_g <- sum(gossip * nei) / length(nei)
 if(runif(n = 1, min = 0, max = 1) <= p_g){
   gossip[i] <- TRUE
 }
 ```
 Here, the `if` statement is true if a value that is randomly drawn from a uniform distribution (that is what `runif()` is doing), is smaller or equal to the probability to encounter an individual with gossip, $p_g$ (i.e. number of neighbours with gossip, `sum(gossip*nei)`, divided by the number of neighbours, `length(nei)`). Note that `gossip*nei` returns a boolean vector that is only `TRUE` for individuals that are both a neighbour and having gossip. As you can see, the probability that $i$ acquires gossip scales linearly with the proportion of neighbours with gossip. This is a good approximation for the spread of information following simple contagion. In the case of complex contagion, we assume that occasional interactions (or exposures) are less important than more frequent ones. We might require an individual to be exposed to gossip repeatedly. This could be, say, the repeated encounter with a gossiper or encounter of more than one gossiper. We can then write: 
 ```{r 11.43, eval=FALSE}
-if(runif(n = 1, min = 0, max = 1) <= (sum(nei)/length(nei))^e){
+if(runif(n = 1, min = 0, max = 1) <= (sum(nei) / length(nei))^e){
   gossip[i] <- TRUE
 }
 ```
@@ -609,7 +608,7 @@ gossip_model_2 <- function(net, rewire, e = 1, r_max, sim = 1){
       # Proceed if there is at least one neighbour
       if(sum(nei) > 0){
         # Simple contagion for e = 1 and complex contagion for e = 2
-        if(runif(n = 1, min = 0, max = 1) <= (sum(gossip*nei)/length(nei))^e){
+        if(runif(n = 1, min = 0, max = 1) <= (sum(gossip * nei) / length(nei))^e){
           gossip[i] <- TRUE
         }
       }
@@ -643,7 +642,6 @@ res <- bind_rows(
   gossip_model_2(net = net_clust, rewire = TRUE, e = 2, r_max = 5000),
   gossip_model_2(net = net_clust, rewire = FALSE, e = 2, r_max = 5000)
   )
-
 
 ggplot(res) + 
   geom_line(aes(x = time, y = proportion, col = network)) + 
