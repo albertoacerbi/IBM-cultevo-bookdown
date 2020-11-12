@@ -1,10 +1,10 @@
 # Group structured populations and migration
 
-Many simulations assume well-mixed populations, that is, populations of individuals that have an equal chance of encountering each other. In the previous chapter, we have looked at the effects of structured interactions on the transmission of cultural traits. Both, structured and unstructured populations, can be good approximations to the real world, depending on the context and research question. What about structured populations, a combination of the two. That is, a large population of individuals is divided into sub-populations, where individuals _within_ a sub-population are (more or less) equally likely to encounter each other, whereas encounter frequencies _between_ sub-populations are much lower. As such learning would only occur within each sub-population. However, individuals may migrate between sub-populations, bringing along their own selection or expressions of cultural traits. 
+Many simulations assume well-mixed populations, that is, populations of individuals that have an equal chance of encountering each other. In the previous chapter, we have looked at the effects of structured interactions on the transmission of cultural traits. Both, structured and unstructured populations, can be good approximations to the real world, depending on the context and research question. What about structured populations, a combination of the two. That is, a large population of individuals is divided into subsets, where individuals are more likely to encounter individuals from the same subset but much less likely to encounter individuals from a different subset. As such learning would only occur within each subset. However, individuals may migrate between subsets, bringing along their own selection or expressions of cultural traits. 
 
 ## Modelling migration
 
-In this chapter, we will simulate this movement between sub-populations to study its effect on the transmission of a socially acquired behaviour. We model a population of size $n$, with $s$ sub-populations, and $b$ instances of a behavioural trait. For most of this chapter, we assume that there are two versions of the behaviour, for example, two individuals greet each other either with a handshake or with a hug. You will see that there are many opportunities to alter the model (have more sub-populations, behaviours, learning events, etc.). 
+In this chapter, we will simulate this movement between subsets to study its effect on the transmission of a socially acquired behaviour. We model a population of size $n$, with $s$ subsets, and $b$ instances of a behavioural trait. For most of this chapter, we assume that there are two versions of the behaviour, for example, two individuals greet each other either with a handshake or by elbow bump. You will see that there are many opportunities to alter the model (have more subsets, behaviours, learning events, etc.). 
 
 We will start very simply with one large population where individuals acquire a behavioural trait from a random individual in their population, and then add layers to the model. Let us set up a population:
 
@@ -23,13 +23,11 @@ Everyone in our population is constantly exhibiting their behaviour. Occasionall
 
 ```{r 12.2}
 t <- 1000
-recbehav <- matrix(NA, nrow = t, ncol = b)
+rec_behav <- matrix(NA, nrow = t, ncol = b)
 
 for(timestep in 1:t){
-  # choose a random observer and a random individual to observe 
-  observer_model <- sample(x = n, size = 2, replace = FALSE)
-  # let observer acquire trait from model
-  behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
+  # unbiased copying of a behaviour by a random individual
+  behaviours[ sample(x = n, size = 1) ] <- sample(x = behaviours, size = 1)
   # record the frequency of each trait in each timestep
   recbehav[timestep,] <- table(behaviours)
 }
@@ -88,9 +86,9 @@ As we can see, the two behaviours meander until, by chance, behaviour $1$ is com
 
 
 ## Subdivided population
-Now let us assume that the population we are looking at divided into two sub-populations, here `clusters`. We will keep track which individual belongs to which cluster and then record the frequency of one of the behaviours, $p$, (the frequency of the other behaviour, $q$, is simply $1-p$) in each cluster. Also, note that cluster size $n$ is the same for all clusters.
+Now let us assume that the population we are looking at divided into two subsets, here `clusters`. We will keep track which individual belongs to which cluster and then record the frequency of one of the behaviours, $p$, (the frequency of the other behaviour, $q$, is simply $1-p$) in each cluster. Also, note that cluster size $n$ is the same for all clusters.
 
-```{r 12.6, fig.cap="The frequency of one out of two behaviours in two sub-populations will fluctuate around 0.5 if individuals are equally likely to learn from individuals in both sub-populations (or clusters)."}
+```{r 12.6, fig.cap="The frequency of one out of two behaviours in two subsets will fluctuate around 0.5 if individuals are equally likely to learn from individuals in both subsets (or clusters)."}
 migration_model_2 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
   totalpop <- NPOP*POPSIZE
   cluster <- sample(x = NPOP, size = totalpop, replace = TRUE)
@@ -125,11 +123,11 @@ ggplot(res) +
   theme_bw()
 ```
 
-Running this code repeatedly will show you two things. First, on average the frequency of each behaviour will still be around 0.5, and second that the frequency changes are highly correlated between the two sub-populations. This is expected because, with the current version of our model, individuals do not distinguish between or have different access to individuals of either cluster. 
+Running this code repeatedly will show you two things. First, on average the frequency of each behaviour will still be around 0.5, and second that the frequency changes are highly correlated between the two subsets. This is expected because, with the current version of our model, individuals do not distinguish between or have different access to individuals of either cluster. 
 
-What would happen if members of a cluster preferentially learn from others within their cluster? This might be the case where individuals spent most of their time in their sub-populations. To make sure that we choose an observer and a model from the same cluster we can use the `prob` argument in the `sample()`. This argument gives a weight (or probability) with which an element of a provided set is chosen. By default, each element has a weight of $1$ and thus is equally likely to be selected. To limit our scope to individuals within the same cluster, we can simply set the weight to $0$ for all individuals that are in a different cluster. And so, we first select a cluster and then choose two individuals from that cluster to be our observer and model. We will add an `if` statement to make sure that there are at least two individuals in the cluster:
+What would happen if members of a cluster preferentially learn from others within their cluster? This might be the case where individuals spent most of their time in their subsets. To make sure that we choose an observer and a model from the same cluster we can use the `prob` argument in the `sample()`. This argument gives a weight (or probability) with which an element of a provided set is chosen. By default, each element has a weight of $1$ and thus is equally likely to be selected. To limit our scope to individuals within the same cluster, we can simply set the weight to $0$ for all individuals that are in a different cluster. And so, we first select a cluster and then choose two individuals from that cluster to be our observer and model. We will add an `if` statement to make sure that there are at least two individuals in the cluster:
 
-```{r 12.7, fig.cap="When individuals copy behaviours only from individuals within their own sub-population, we find that the frequency of behaviour 1 becomes uncorrelated between the two sub-populations. In this example, behaviour 1 is lost in cluster 2, whereas it is still present in cluster 1 at the end of the simulation."}
+```{r 12.7, fig.cap="When individuals copy behaviours only from individuals within their own subset, we find that the frequency of behaviour 1 becomes uncorrelated between the two subsets. In this example, behaviour 1 is lost in cluster 2, whereas it is still present in cluster 1 at the end of the simulation."}
 migration_model_3 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
   totalpop <- NPOP*POPSIZE
   cluster <- sample(x = NPOP, size = totalpop, replace = TRUE)
@@ -166,7 +164,7 @@ ggplot(res) +
 
 When we run this simulation repeatedly, you will see that sometimes one of the behaviours gets lost in one, both, or neither of the clusters. Because in this iteration of our simulation there are no interactions between individuals of different clusters, we are essentially simulating two independent populations. You can see that this is the case when we start the simulation monomorphic clusters, i.e. all individuals in a cluster start with the same behaviour:
 
-```{r 12.8, fig.cap="When two sub-populations start out fully saturated with one of two different behaviours and if there is no learning between clusters, the intial frequencies will remain unchanged."}
+```{r 12.8, fig.cap="When two subsets start out fully saturated with one of two different behaviours and if there is no learning between clusters, the intial frequencies will remain unchanged."}
 migration_model_4 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
   totalpop <- NPOP*POPSIZE
   behaviours <- rep(sample(NBEHAVIOUR,size = NPOP, replace = TRUE), each = POPSIZE)
@@ -201,9 +199,9 @@ ggplot(res) +
 As we can see, there is no interaction between the two clusters and the frequency of behaviour 1 remains unchanged. 
 
 
-## Simulating migration between sub-populations
+## Simulating migration between subsets
 
-In the next step, we can add migration to our model. In the context of our model, migration means that an individual is moving from one sub-population to another. However, we could also think of a version where this move is not permanent. Instead, the individual could join another group, learn a new behaviour and return to its original sub-population. Here, we will focus on the former. 
+In the next step, we can add migration to our model. In the context of our model, migration means that an individual is moving from one subset to another. However, we could also think of a version where this move is not permanent. Instead, the individual could join another group, learn a new behaviour and return to its original subset. Here, we will focus on the former. 
 
 To model (physical) migration, we will add the migration probability $\mu$ to the model (where $0$ means no migration, and $1$ means that an individual will always choose to move to another group):
 
@@ -238,7 +236,7 @@ The migration code chunk is doing three things. First, we make sure that migrati
 
 Setting $\mu=0$ will recover the previous results, where the clusters behave independently:
 
-```{r 12.10, fig.cap="Without migration between clusters, there is no learning outside a sub-population, and so initial behaviour frequencies remain unchanged."}
+```{r 12.10, fig.cap="Without migration between clusters, there is no learning outside a subset, and so initial behaviour frequencies remain unchanged."}
 res <- migration_model_5(NPOP = 4, POPSIZE = 100, NBEHAVIOUR = 2, 
                       NTIMESTEPS = 1000, MIGRATION = 0)
 ggplot(res) + 
@@ -263,7 +261,7 @@ ggplot(res) +
 
 For rare migration, we can find occasional changes in the frequency but it usually bounces back again. 
 
-```{r 12.12, fig.cap="When migration is rare, the frequency of behaviour 1 changes occassionally but quickly bounes back to the original value in the sub-population."}
+```{r 12.12, fig.cap="When migration is rare, the frequency of behaviour 1 changes occassionally but quickly bounes back to the original value in the subset."}
 set.seed(1)
 res <- migration_model_5(NPOP = 4, POPSIZE = 100, NBEHAVIOUR = 2, 
                       NTIMESTEPS = 1000, MIGRATION = 0.01)
@@ -356,7 +354,7 @@ repeatedRun <- do.call("rbind",
   )
 ```
 
-```{r 12.17, fig.cap="As migration rate increases sub-populations become increasingly similar in the frequency of behaviours.", message=FALSE}
+```{r 12.17, fig.cap="As migration rate increases subsets become increasingly similar in the frequency of behaviours.", message=FALSE}
 ggplot(repeatedRun) + 
   geom_point(aes(x = migration, y = absdiff)) +
   geom_smooth(aes(x = migration, y = absdiff)) +
@@ -365,7 +363,7 @@ ggplot(repeatedRun) +
   theme_bw()
 ```
 
-When we plot the results (as a scatter-plot with an added loess trendline), we can see again for the case where there is no migration ($\mu=0$) the two clusters either have entirely the same (difference $=0$) or entirely different behaviours (difference $=1$). We can also see that for all migration probabilities there is a chance that both clusters will end up being monomorphic in their behaviour. Conversely, the probability that the two clusters are entirely different in their behaviour decreases as $\mu$ increases. It is also interesting to see that for the parameters we have chosen here this happens most dramatically for $\mu<0.25$. For larger values of $\mu$ the difference between the two clusters is on average $0$. This is what we would expect: when migration is high sub-populations are essentially becoming one large population again. Given enough time drift will lead to the fixation of one of the behaviours. 
+When we plot the results (as a scatter-plot with an added loess trendline), we can see again for the case where there is no migration ($\mu=0$) the two clusters either have entirely the same (difference $=0$) or entirely different behaviours (difference $=1$). We can also see that for all migration probabilities there is a chance that both clusters will end up being monomorphic in their behaviour. Conversely, the probability that the two clusters are entirely different in their behaviour decreases as $\mu$ increases. It is also interesting to see that for the parameters we have chosen here this happens most dramatically for $\mu<0.25$. For larger values of $\mu$ the difference between the two clusters is on average $0$. This is what we would expect: when migration is high subsets are essentially becoming one large population again. Given enough time drift will lead to the fixation of one of the behaviours. 
 
 
 ## Model extensions
@@ -393,8 +391,8 @@ if(sum(cluster == clusterid)>m){
 where $m$ is the number of models to observe. (Note, due to the peculiarities of the `sample()` function this code only works for $m>1$).
 
 
-### Learn from but not moving to another sub-population {-}
-Another extension of those model would be to have individuals not actually (physically) move between sub-populations, but rather do *expeditions* to another group, copy a behaviour, and bring it back to their original group. Let's assume this happens with probability $\alpha$.
+### Learn from but not moving to another subset {-}
+Another extension of those model would be to have individuals not actually (physically) move between subsets, but rather do *expeditions* to another group, copy a behaviour, and bring it back to their original group. Let's assume this happens with probability $\alpha$.
 
 To do this, we would again make changes to the `observer_model` selection part of the code. We would now choose the cluster ID for the model and the observer independently.
 ```{r, eval=FALSE}
@@ -416,25 +414,25 @@ behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
 Note, this would also prohibit clusters from every being empty as no individual would ever leave their cluster. Depending on the objective of the model this could be useful.
 
 
-### Variable migration probability among sub-populations {-}
-Finally, this model can be extended to accommodate different population structures. In this chapter, we have only looked at symmetric connections between sub-populations (all sub-populations are connected and migration between them is equally likely). But the structure could also be a line, a circle, a star, and others, where not all sub-populations are connected (missing links) or where migration probability is low (using weighted connections). This can be useful to generally better understand how population structure will affect transmission. But it can also be used to model specific scenarios if there is existing data on population structure. 
+### Variable migration probability among subsets {-}
+Finally, this model can be extended to accommodate different population structures. In this chapter, we have only looked at symmetric connections between subsets (all subsets are connected and migration between them is equally likely). But the structure could also be a line, a circle, a star, and others, where not all subsets are connected (missing links) or where migration probability is low (using weighted connections). This can be useful to generally better understand how population structure will affect transmission. But it can also be used to model specific scenarios if there is existing data on population structure. 
 
-For this iteration of the base model, we need to change the `migration` section. Instead of choosing randomly among other clusters, we would provide a probability vector to the `sample()` function that reflects the probabilities to move from one to another sub-population. As an example, let us assume we are looking at three sub-populations $\{A, B, C\}$. A simple structure is a line, where $A$ is connected with $B$ and $B$ is connected with $C$, or `A--B, B--C`. We can use an adjacency matrix to describe the probability to move from one sub-population to another:
+For this iteration of the base model, we need to change the `migration` section. Instead of choosing randomly among other clusters, we would provide a probability vector to the `sample()` function that reflects the probabilities to move from one to another subset. As an example, let us assume we are looking at three subsets $\{A, B, C\}$. A simple structure is a line, where $A$ is connected with $B$ and $B$ is connected with $C$, or `A--B, B--C`. We can use an adjacency matrix to describe the probability to move from one subset to another:
 ```{r}
 adj <- matrix(c(0,1,0,  1,1,1,  0,1,0), nrow = 3)
 adj
 ```
-If rows are the starting and columns the destiny sub-populations, then this matrix tells us that an individual in sub-population $A$ (first row) can move to $B$ (second column entry is a one) but not to $C$ (last column entry is a zero). Now, when we determine that an individual is moving to a different group, we can simply recall the correct row of the `adj` matrix based on the individual's `clusterid`:
+If rows are the starting and columns the destiny subsets, then this matrix tells us that an individual in subset $A$ (first row) can move to $B$ (second column entry is a one) but not to $C$ (last column entry is a zero). Now, when we determine that an individual is moving to a different group, we can simply recall the correct row of the `adj` matrix based on the individual's `clusterid`:
 ```{r, eval=FALSE}
 if((runif(1,0,1) <= MIGRATION) & (NPOP > 1)){
   cluster[ observer_model[1] ] <- sample((1:NPOP), size = 1, prob = adj[clusterid,])
 }
 ```
-Also, this piece of code allows us to use non-binary values, where small values represent a low probability to move from one to another sub-population, and asymmetric matrices where the probability going from $A$ to $B$ can be different from the probability for the reverse movement. 
+Also, this piece of code allows us to use non-binary values, where small values represent a low probability to move from one to another subset, and asymmetric matrices where the probability going from $A$ to $B$ can be different from the probability for the reverse movement. 
 
 
 ## Summary of the model
-In this chapter we have used a simple model to simulate the effect of population sub-structuring. We have seen that, depending on migration (either physical or as migration of ideas) can affect the frequency of a behaviour in each sub-population. When migration is low, the frequency of individual behaviours becomes uncorrelated between sub-populations. However, as migration increases, sub-populations behave more and more like a single large population. 
+In this chapter we have used a simple model to simulate the effect of population sub-structuring. We have seen that, depending on migration (either physical or as migration of ideas) can affect the frequency of a behaviour in each subset. When migration is low, the frequency of individual behaviours becomes uncorrelated between subsets. However, as migration increases, subsets behave more and more like a single large population. 
 
 ## Further reading
 There are a couple of interesting empirical studies on migration and the social transmission of locally adaptive behaviours in animals. For example, the study by @luncz_tradition_2014 reports on the stability of tool traditions in neighbouring chimpanzee communities. 
