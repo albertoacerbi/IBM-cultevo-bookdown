@@ -6,7 +6,7 @@ For mathematical tractability models often assume well-mixed populations, where 
 ## Network basics
 Networks are a popular tool to visualise relationships between different actors. For example, co-authorship networks typically visualise which authors frequently publish articles together, ecological networks demonstrate trophic interactions between different species, and kinship networks show how individuals are related to each other. All networks are comprised of at least two components: 'nodes' (also referred to as vertex, _pl._ vertices), which represent actors, and 'ties' (also referred to as edges) between any two nodes, which represent the existence of a relationship (e.g. co-authorship, kinship, cooperation, etc.). 
 
-```{r 11.1, echo=FALSE, fig.cap="Example network."}
+```{r 11.1, message = FALSE, warning = FALSE, echo = FALSE, fig.cap = "An example network."}
 library(igraph)
 A <- matrix(c(0,1,1,0, 0,0,1,0, 1,0,0,1, 0,0,1,0), nrow = 4, byrow = TRUE)
 row.names(A) <- c("A", "B", "C", "D")
@@ -14,11 +14,11 @@ colnames(A) <- c("A", "B", "C", "D")
 net <- graph_from_adjacency_matrix(A)
 plot(net, edge.curved=0.5)
 ```
-The above figure shows a simple graph with four nodes (A-D), and their relationship edges (arrows). Note that some nodes have an incoming and an outgoing edge to another node (e.g. A and C) but some nodes have more incoming than outgoing edges (here A and C). This means that the relationship is not mutual, or unilateral, like friendship or donations. In other cases, e.g. kinship ties, edges are always reciprocal. In this case, arrowheads are often omitted and a straight line is drawn between the nodes.
+The above figure shows a simple graph with four nodes (A-D), and their relationship edges (arrows). Note that some nodes have an incoming and an outgoing edge to another node (e.g. B and D) but some nodes have more incoming than outgoing edges (here C). This means that the relationship is not mutual, or reciprocal, like in the case of friendship or donations. In other cases, e.g. kinship ties, edges are always reciprocal. In this case, arrowheads are often omitted and a straight line is drawn between the nodes.
 
 To work with networks in R, we need to find a way to represent nodes and edges. One option is to use an adjacency matrix (the other is an edge list, which we will not discuss here). An adjacency matrix is a square matrix where every possible relationship between any two actors (also called a dyad), is represented as a value (typically a $0$ if there is no relationship, or a $1$ if there is one). Generally, rows and columns represent the 'from' and 'to' nodes. As an example, assume we have $N$ actors, then our adjacency matrix $A$ will be of the size $N \times N$. If individual $i$ and $j$ have a reciprocal relationship, then $A_{i,j}=A_{ji}=1$. However, if, say, $i$ has donated to $j$ at some point but $j$ not to $i$, then we would write $A_{ij}=1$ and $A_{ji}=0$. Consequentially, if there is no relationship between the two then $A_{i,j}=A_{ji}=0$. Let us translate this into R code. 
 
-We start by setting up a simple square matrix with a few zeros and ones. Let us also name the rows and columns with capital `Letters`. These will be the names of the nodes. 
+We start by setting up a simple square matrix with a few zeros and ones. Let us also name the rows and columns with capital letters, using the `LETTERS` constant, built into R. These will be the names of the nodes. 
 
 ```{r 11.2}
 m <- matrix(c(0,1,1,0, 0,0,1,0, 1,0,0,1, 0,0,1,0), nrow = 4, byrow = TRUE)
@@ -27,9 +27,9 @@ colnames(m) <- LETTERS[1:4]
 m
 ```
 
-Have a look at the resulting matrix `m`. It describes the relationships between four individuals A, B, C, and D. When we look at the first row, we see that A has no interaction with itself (indicated by the zero), but interacts both with B and C (indicated by the ones). From the next row, we see that B is only interacting with C, and so forth. You might notice that this is the adjacency matrix that we used for the network graph above. This adjacency matrix is also called an asymmetric adjacency matrix because not all interactions are reciprocal. We can see this when we plot the network but we can also test using a bit of code. 
+Let's have a look at the resulting matrix `m`. It describes the relationships between four individuals: A, B, C, and D. When we look at the first row, we see that A has no interaction with itself (indicated by the zero), but interacts both with B and C (indicated by the ones). From the next row, we see that B is only interacting with C, and so forth. You might notice that this is the adjacency matrix that we used for the network graph above. This adjacency matrix is also called an asymmetric adjacency matrix because not all interactions are reciprocal. We can see this when we plot the network but we can also test using a bit of code. 
 
-Let's think, under which condition are all interactions reciprocal? The answer is when for all $i$ and $j$ it is true that $A_{ij}=A_{ji}$. In other words, if the entries of $A$'s upper triangle are identical to the entries of its lower triangle. To return only the values of the upper triangle of our matrix, we can use the `upper.tri()` function. It uses the matrix itself as an argument to return a matrix of the same size with `TRUE`s for entries that are part of the upper triangle, and `FALSE` for all other entries. We use this to select the correct values from our matrix. We can then compare these values with the upper triangle of the transposed version of the matrix (we transpose using the `t()` function). If `all()` entries are identical, we know that we have a symmetric matrix. 
+Let's think, under which condition are all interactions reciprocal? The answer is when for all $i$ and $j$ it is true that $A_{ij}=A_{ji}$. In other words, if the entries of $A$'s upper triangle are identical to the entries of its lower triangle. To return only the values of the upper triangle of our matrix, we can use the `upper.tri()` function. It uses the matrix itself as an argument to return a matrix of the same size with `TRUE` for entries that are part of the upper triangle, and `FALSE` for all other entries. We use this to select the correct values from our matrix. We can then compare these values with the upper triangle of the transposed version of the matrix (we transpose using the `t()` function). If `all()` entries are identical, we know that we have a symmetric matrix. 
 
 ```{r 11.3}
 all(m[upper.tri(m)] == t(m)[upper.tri(m)])
@@ -45,7 +45,7 @@ Sometimes, you might want to create a random network using a symmetric adjacency
 
 ```{r 11.5}
 # Creating a random matrix
-random_matrix <- matrix(sample(x = c(0,1), size = 10^2, replace=T), ncol=10)
+random_matrix <- matrix(sample(x = c(0,1), size = 100, replace = T), ncol = 10)
 random_matrix
 # It is not symmetric
 isSymmetric(random_matrix)
@@ -58,7 +58,7 @@ isSymmetric(random_matrix)
 ```
 
 ## Generating networks
-Networks can vary widely depending on what they represent, or what their purpose is if they are simulate from scratch. Fig @ref{11.3.1} shows a few different types of networks that require different methods to create. A simple way to generate certain types of networks with, say, different number of nodes and edges, is to use one of the many functions provided by the `igraph` package. For example, the ring graph above can be generated with this simple command: `make_ring(n=10)`. 
+Networks can vary widely depending on what they represent, or what their purpose is if they are simulate from scratch. Fig @ref{11.6} shows a few different types of networks that require different methods to create. A simple way to generate certain types of networks with, say, different number of nodes and edges, is to use one of the many functions provided by the `igraph` package. For example, the ring graph below can be generated with this simple command: `make_ring(n = 10)`. 
 
 <!--@Alberto, the following code chunk will only display a figure, not the code.-->
 ```{r 11.6, echo=FALSE, message=FALSE, fig.cap="Different graph types (from left: circle, lattice, random, scale free, fully connected) vary in the density and distribution of edges between nodes."}
@@ -78,7 +78,7 @@ par(mfrow=c(1,1))
 par(mar=parbefore)
 ```
 
-For certain projects, these standard networks might not be sufficient, for example, if you have a certain mechanism in mind. Let us write our own network generating function to suit our needs. As an example, let us write a function that creates a random network of $N$ individuals. Let's assume that the edges we will add between nodes represent friendships.  with a variable friendship proportion $f$ (for $f=1$ all individuals are friends, and for $f=0$, sadly no one is friends with each other). 
+For certain projects, these standard networks might not be sufficient, for example, if you have a certain mechanism in mind. Let us write our own network generating function to suit our needs. As an example, let us write a function that creates a random network of $N$ individuals. Let's assume that the edges we will add between nodes represent friendships,  with a variable friendship proportion $f$ (for $f=1$ all individuals are friends, and for $f=0$, sadly no one is friends with each other). 
 
 
 ```{r 11.7}
@@ -104,23 +104,26 @@ create_network <- function(N, f){
 
 In our new function `create_network()` we first set up an empty adjacency matrix and a friendship counter. Then, we use a `while` loop to continuously select a random dyad in our group (i.e. individual $i$ and $j$), test whether they are already friends. If this is not the case, we set $A_{ij}=A_{ji}=1$ and increase the friendship counter. However, if they already are friends, we simply continue selecting another random dyad from our network. We stop when we reach $f(N^2-N)/2$ friendships (the total number of possible connections is $N^2$, however, we assume that individuals cannot be friends with themselves and that friendships are reciprocal). 
 
+Our new function allows us to create a variety of different networks. One can generate, for example, a network with 10 individuals, that have 50% of probability of being friend of each other.
+
 ```{r 11.8}
 adjm <- create_network(N = 10, f = .5)
 adjm
 ```
 
-Our new function allows us to create a variety of different networks. Let us now use additional functions from the `igraph` package to turn our adjacency matrices in networks and then to visualise them. This will give us a better intuition of what our groups look like when we change the two parameters. 
+Let us now use additional functions from the `igraph` package to turn our adjacency matrices in networks and then to visualise them. This will give us a better intuition of what our groups look like when we change the two parameters. 
 
 
 ## Plotting networks 
 To visualise a network nodes and edges have to be placed in the correct relation to each other on an empty canvas. Because there is a lot of calculation going into this, we will use the plotting features that come with the `igraph` package. This package requires the network to be an `IGRAPH` object. So first, we will have to turn our adjacency matrix into a network. The function `graph_from_adjacency_matrix()` is going to do this for us: 
 
 ```{r 11.9}
+library(igraph)
 net <- graph_from_adjacency_matrix(adjm)
 net
 ```
 
-`graph` is providing us with a lot of information, for example, it tells us that `net` is an `IGRAPH` object and that there are `r vcount(net)` vertices and `r ecount(net)` edges (for more information on reading this output take a look at this short [igraph introduction](https://igraph.org/r/doc/aaa-igraph-package.html)). In addition to general information about the network, we receive a series of 'from to' pairs, e.g. `1->2`, indicating the edges between the different nodes. This is essentially an edge list, an alternative to our adjacency matrix to describe relationships. Sometimes, it might be better to work with an edgelist, especially if there are many more nodes than edges. In this case, we would require a very large matrix that is mostly filled with zeros and only very few ones. You can use `get.edgelist(net)` to return the edgelist of your network. 
+If we enter the name of the network `net` we are provided with a lot of information, for example, that `net` is an `IGRAPH` object and that there are `r vcount(net)` vertices and `r ecount(net)` edges (for more information on reading this output take a look at this short [igraph introduction](https://igraph.org/r/doc/aaa-igraph-package.html)). In addition to general information about the network, we receive a series of 'from to' pairs, e.g. `1->3`, indicating the edges between the different nodes. This is essentially an edge list, an alternative to our adjacency matrix to describe relationships. Sometimes, it might be better to work with an edgelist, especially if there are many more nodes than edges. In this case, we would require a very large matrix that is mostly filled with zeros and only very few ones. You can use `get.edgelist(net)` to return the edgelist of your network. 
 
 Now that we have our network in the correct shape, we can use the plot function to visualise it:
 
@@ -131,7 +134,7 @@ plot(net)
 This is the most basic network plot where each node (with the numbers 1 to `r vcount(net)`) and their edges are plotted such that nodes that receive more connections are more central and those that receive less are more peripheral. Note, every time you plot the network, it will have a slightly different layout. To preserve the node positions you can use the `set.seed()` function in the code chunk above. When it is executed before plotting, the nodes will always appear in the same location. You can change the position of the nodes by using a different seed number. 
 
 ### Network layout
-There are also ways to plot networks in entirely different layouts. In the following graph, for example, we put nodes in a ring layout or on a grid. We use the different `layout.x()` functions in `ìgraph` in combination with the `layout=` argument of the plotting function. 
+There are also ways to plot networks in entirely different layouts. In the following graph, for example, we put nodes in a ring layout or on a grid. We use the different `layout.x()` functions in `ìgraph` in combination with the `layout=` argument of the plotting function. Notice we are not using the usual `ggplot` function to plot, as we make use of the specific functionalities of `igraph`.
 
 ```{r 11.11, fig.cap="Example for two different network layouts, the grid and the ring."}
 # Set the plotting environment to allow 2 plots next to each other
@@ -149,7 +152,6 @@ There are many more layout functions that will result in slightly different visu
 In addition to the layout, which affects the placing of nodes, we can also change the actual appearance of nodes and edges, such as their size and width, colour, labelling, and more. While the igraph manual is a good reference to figure out all the possibilities, here is the general principle: any attribute we want to change needs either the `vertex.` or `edge.` prefix. For example, to change the colour of all vertices, we would use `vertex.color=`. Have a look at the following example for more ideas of what we can change:
 
 ```{r 11.12, fig.cap="Using syling arguments with the `plot()` function allows to manipulate the appearence of vertices, edges, and labels."}
-set.seed(1)
 plot(net, 
      vertex.color = "dodgerblue", 
      vertex.label.color = "white",
@@ -206,7 +208,7 @@ We now have two attributes that are associated with our network. To use them in 
 
 Because we have colours representing the age, we may want to remove the labels in each node and make the nodes smaller. This becomes even more important when networks become large. For this, we can simply set `vertex.label` to `NULL`. Also, given that we have a symmetric network (all relationships are reciprocal), we can get rid of the arrow tips. We can do this by turning our network into an 'undirected' network, using the `as.undirected()` function:
 
-```{r 11.16, fig.cap="We can remove vertex labels to reduce clutter."}
+```{r 11.16, fig.cap="A cleaner version of the same network."}
 net <- as.undirected(net)
 set.seed(1)
 plot(net, 
@@ -230,7 +232,6 @@ net
 We assigned the friendship strength values to an attribute called `weight`. Take a look at the `net` object. It now says `U-W-`, indicating that it is both an **u**ndirected as well as a **w**eighted network. To plot the edge weights, we instruct the plotting function to use the `E(net)$weight` values for the `edge.width` parameter (note that we multiply the values by some value to make the strokes bigger in the final plot):
 
 ```{r 11.18, fig.cap="To indicate different strength in the relationship of two nodes, we can vary the width of edge between them."}
-set.seed(1)
 plot(net, 
      vertex.color = V(net)$col, 
      vertex.label = NA,
@@ -245,8 +246,9 @@ You can now observe strong and weak relationships between individuals, their loc
 ## Analyse social networks
 To describe networks, a set of specific terms and measures are used. Let us take a look at the most common measures. In principle, we distinguish between two different levels to describe properties that are associated with networks: 
 
-* Population-level network properties and
-* Individual-level vertex properties. 
+* Population-level network properties 
+
+* Individual-level vertex properties
 
 ### Network properties and characteristics
 To retrieve the most basic information about our network we can use the `V()` and `E()` function for vertices and edges of a given network.
@@ -330,13 +332,12 @@ betweenness(graph = net)
 eigen_centrality(graph = net)$vector
 ```
 
-Sometimes it is good to visualise these characteristics as colour in your network. For example, betweenness centrality can be hard to see by just looking at the graph. Instead of plotting the age of our vertices, we could also plot their network metrics. Here is an example for colouring nodes based on their betweenness centrality:
+Sometimes it is good to visualise these characteristics as colour in your network. For example, betweenness centrality can be hard to see by just looking at the graph. Instead of plotting the age of our vertices, we could also plot their network metrics. Here is an example for colouring nodes based on their betweenness centrality. The closer to red colour, the more a node has higher betweenness centrality.
 
 ```{r 11.32, fig.cap="Example graph where nodes are coloured based on their betweenness centrality. "}
 between <- betweenness(graph = net)
 col <- heat.colors(n = max(between) + 1, rev = TRUE)[between + 1]
 # Plot network with col
-set.seed(1)
 plot(net, 
      vertex.color = col, 
      vertex.label = NA,
@@ -347,28 +348,29 @@ plot(net,
      main = "Betweenness centrality")
 ```
 
-Now that we know how to generate, plot, and analyse networks, we can move on to use them in a social learning context. 
-
 
 ## Modelling information transmission in social networks
+
+Now that we know how to generate, plot, and analyse networks, we can move on to use them in a social learning context. 
+
 The diffusion of information in social networks differs from the diffusion in well-mixed populations (see our earlier chapters) in that the individual does only have access to the information of her direct network neighbours, i.e. those they share edges with. In comparison, in well-mixed populations (equivalent to a fully connected network) every individual is equally likely to interact with any other individual, and so has access to information from the entire population. Thus, when modelling transmission in social networks, we have to take into account that an individual can only sample from its social environment and not from the entire population (which we have done in the earlier chapters, like the biased and unbiased transmission). Instead, we have to simulate neighbourhood sampling for each node individually. 
 
 In this part of the chapter, we will first develop a function to simulate the spread of gossip in networks of varying degree centrality. This will give us a better understanding of the effect of edge density on the diffusion speed. This is a simple model that you can alter to test other network characteristics (e.g. diameter or betweenness centrality). With the second model, we will simulate different ways of information diffusion (i.e. simple versus complex contagion) and test how network transitivity and the mode of transmission interact. 
 
 
 ### Gossip diffusion in networked populations
-Let us develop a model that simulates the spread of gossip in a group of people. We will assume that a proportion $f$ of the population are friends and thus share an (undirected) edge. Gossip can spread between connected individuals. Gossip spreads from individuals that have gossip to those who do not. Eventually, all individuals that are in some way connected to an individual with gossip will possess the gossip. 
+Let us develop a model that simulates the spread of gossip in a group of people. As before, we will assume that a proportion $f$ of the population are friends and thus share an (undirected) edge. Gossip can spread between connected individuals. Gossip spreads from individuals that have gossip to those who do not. Eventually, all individuals that are in some way connected to an individual with gossip will possess the gossip. 
 
 Which elements do we need for this model? First, we need to keep track which individual has previously received the gossip (we will use a vector called `gossip` of length $N$ where `TRUE` indicates the possession of gossip). Second, we need an adjacency matrix that describes the connections in our network (this is stored in `adjm` and created using the `create_network()` function that we set up earlier in this chapter). Third, we will need a reporting variable to keep track how the proportion of the population in possession of gossip changes over time. This can be a simple vector of length `r_max`, i.e. the number of rounds. We will call this reporting vector `proportion`. And finally, we need a simulation loop that executed the following three steps:
 
-1. In random sequence select the neighbourhood of each node
+1. In random sequence go through all individuals
 2. If the focal individual has at least one neighbour, select one random neighbour
 3. If that neighbour has gossip, change the focal individual's gossip indicator to `TRUE`
 
 We repeat these steps for `r_max` number of rounds. At the end of all rounds, we return a `tibble` where we will store the proportion of the population with gossip at each round, as well as the value of $f$ and the `sim` argument. This is the counter of our simulation. At the moment we only run one simulation at a time, so we set this argument to be one, i.e. `sim = 1` in the function definition. We will see that this counter can be useful when we run repeated simulations later. 
 
 
-```{r 11.33}
+```{r 11.33, message = FALSE}
 library(tidyverse)
 gossip_model <- function(N, f, r_max, sim = 1){
   # Create a vector indicating possession of gossip and set one entry to TRUE
@@ -405,7 +407,7 @@ gossip_model <- function(N, f, r_max, sim = 1){
 }
 ```
 
-Going through this function, you will find to functions that are not part of R. The first is `create_network()`, which we created earlier. The second one is called `sampling()`. This is a wrapper function for the generic `sample()` function. What we want the sample function to do is to return one random value of a vector $x$ of length $n$. This works well as long as $n>1$. If $n=1$, we would expect `sample(x)` to return `x`. However, what you will find if you try this is that `sample()` will return a random sequence of the values `1:x`. So, if `x = 5`, `sample(x)` will return e.g. `r sample(5)`. What we could do to receive the desired outcome is to write a function that returns `x` whenever $n=1$ and in all other cases uses the `sample()` function. This function could look like the following: 
+Going through this function, you will find two functions that are not part of R. The first is `create_network()`, which we created earlier. The second one is called `sampling()`. This is a wrapper function for the generic `sample()` function. What we want the sample function to do is to return one random value of a vector $x$ of length $n$. This works well as long as $n>1$. If $n=1$, i.e. if we pass to `sample()` a single number, we would expect `sample(x)` to return `x`. However, what you will find if you try this is that `sample()` will return a random sequence of the values `1:x`. So, if `x = 5`, `sample(x)` will return e.g. `r sample(5)`. What we could do to receive the desired outcome is to write a function that returns `x` whenever $n=1$ and in all other cases uses the `sample()` function. This function could look like the following: 
 
 ```{r 11.34}
 sampling <- function(x, size = length(x), prob = NULL){
@@ -427,12 +429,12 @@ data <- lapply(X = c(1/N, 2/N, 3/N, 5/N, 8/N, 10/N),
 data_bnd <- bind_rows(data)
 ```
 
-As in the previous chapter, we use the `lapply()` function to run several independent simulations. The resulting `data` object is a list of `tibbles`. It is easier to plot the results if we could stack them all on top of each other into a single large `tibble`. We can do this using the `bind_rows()` function. We now can use a simple `ggplot()` line plot to see how the frequency of gossip in populations with different degree centrality changes over time:
+As in the previous chapter, we use the `lapply()` function to run several independent simulations. The resulting `data` object is a list of tibbles. It is easier to plot the results if we could stack them all on top of each other into a single large tibble. We can do this using the `bind_rows()` function. We now can use a simple `ggplot()` line plot to see how the frequency of gossip in populations with different degree centrality changes over time:
 
 ```{r 11.36, fig.cap="Gossip spreads first quickly and then more slowly throughout a population."}
 ggplot(data_bnd) + 
   geom_line(aes(x = time, y = proportion, col = factor(round(f * N)))) + 
-  ylab("prop. of pop. with gossip") +
+  ylab("proportion of individuals with gossip") +
   theme_bw()
 ```
 
@@ -449,32 +451,32 @@ data <- lapply(X = 1:length(f),
               FUN = function(i) gossip_model(N = N, f = f[i], r_max = 50, sim = i))
 ```
 
-Now we bind the resulting `tibbles` into a single object and plot the simulation results. Note that we are now using the `sim` counter as input for the `group` argument in `geom_line()`. This tells `ggplot` to draw a line only between those points that belong to the same group, i.e. the same simulaiton run:
+Now we bind the resulting tibbles into a single object and plot the simulation results. Note that we are now using the `sim` counter as input for the `group` argument in `geom_line()`. This tells `ggplot` to draw a line only between those points that belong to the same group, i.e. the same simulation run:
 
-```{r 11.38, fig.cap="Repeated runs of `gossip_model()` show that on average gossip spreads to less than $0.2$ of the popualtion if individauls have on average 1 friend. For 2 and more friends gossip spreads to more than three quarter in the populaiton."}
+```{r 11.38, fig.cap="Repeated runs of `gossip_model()` show that on average gossip spreads to less than $0.2$ of the population if individuals have on average 1 friend. For 2 and more friends gossip spreads to more than three quarter of the population."}
 data_bnd <- bind_rows(data)
 ggplot(data_bnd) +
   geom_line(aes(x = time, y = proportion, col = factor(f * N), group = factor(sim))) + 
-  ylab("prop. of pop. with gossip") +
+  ylab("proportion of individual with gossip") +
   theme_bw()
 ```
 
-As can see, each simulation run is a bit different even of they have the same starting parameter. Let us plot the proportion of population with gossip in the last simulation step for each degree centrality: 
+As you can see, each simulation run is a bit different even of they have the same starting parameter. Let us plot the proportion of population with gossip in the last simulation step for each degree centrality: 
 
 ```{r 11.39, fig.cap="Here we plot the end points of each simulation from the previous plot as a boxplot. This, again, shows that there is a dramatic difference of diffusion in networks with 1 to 3 friends, but far less in those with 5 and more friends."}
 data_bnd_last <- data_bnd[data_bnd$time == max(data_bnd$time), ]
 ggplot(data_bnd_last) + 
   geom_boxplot(aes(x = (f * N), y = proportion, fill = factor(f * N))) + 
   xlab("average number of friends") +
-  ylab("prop. of pop. with gossip") +
+  ylab("proportion of individuals with gossip") +
   theme_bw()
 ```
 
-You can see that as degree centrality increases a larger proportion of the population will have gossip after 50 simulation rounds. The increase is very strong initially and then levels of quickly after an average degree of 3. 
+You can see that as the number of friends increase a larger proportion of the population will have gossip after 50 simulation rounds. The increase is very strong initially and then levels off quickly after an average degree of 3. 
 
-Another metric we can look at is the number of rounds until $75\%$ of the population own gossip. For this, we will go through each simulation run, that is, each list element stored in `data`, and select the first `time` step where `proportion >= 0.75`. Note that some simulations do not reach this $75\%$ and the resulting value will be `NA`. One way to deal with these is to disregard these simulations. Another one is to set all `NA` values to `r_max`, in our case 50. 
+Another metric we can look at is the number of rounds until $75\%$ of the population own gossip. For this, we will go through each simulation run, that is, each list element stored in `data`, and select the first timestep where `proportion >= 0.75`. Note that some simulations do not reach this $75\%$ and the resulting value will be `NA`. One way to deal with these is to disregard these simulations. Another one is to set all `NA` values to `r_max`, in our case 50, as we will do here. 
 
-```{r 11.40, fig.cap="Simlar to the how far gossip spreads in networks from the previous two plots, we can see here that the speed at which gossip spreads through the population is faster in more connected (larger `f`) networks. However, there are no differences for networks with more than 3 friends on average."}
+```{r 11.40, fig.cap="Speed at which gossip spreads depending on the average number of friends."}
 data_bnd_time <- lapply(data, function(dat){
   tibble(dat[1,], time_to_x = which(dat[,"proportion"] >= 0.75)[1])
 }) %>% bind_rows()
@@ -484,12 +486,19 @@ data_bnd_time$time_to_x[is.na(data_bnd_time$time_to_x)] <- 50
 ggplot(data_bnd_time) + 
   geom_boxplot(aes(x = (f * N), y = time_to_x, fill = factor(f * N))) + 
   xlab("average number of friends") +
-  ylab("Time to spread to 75% of population") +
+  ylab("time to spread to 75% of population") +
   theme_bw()
 ```
 
-Now we can say that with increasing degree centrality information (or gossip) does not only spread to larger proportions of a population but it does so faster. This is true for the random networks that we have tested here. However, as mentioned earlier, there are many different network categories that differ in degree distribution, average path length, clustering, and others. With the next model, we will take a closer look at the effect of clustering. 
+Now we can say that with more friends, information (or gossip) does not only spread to larger proportions of a population but it does so faster. This is true for the random networks that we have tested here. However, as mentioned earlier, there are many different network categories that differ in degree distribution, average path length, clustering, and others. With the next model, we will take a closer look at the effect of clustering. 
 
+<!-- done to here AA.
+
+Things to ask Marco:
+(i) consider whether set.seed() is really necessary and, if it is, introduce it.
+(ii) adjust in the plots of the "Gossip diffusion in networked populations" section the label of the legend and the ticks of x-axis.
+ 
+-->
 
 
 
