@@ -131,7 +131,7 @@ Now that we have our network in the correct shape, we can use the plot function 
 plot(net)
 ```
 
-This is the most basic network plot where each node (with the numbers 1 to `r vcount(net)`) and their edges are plotted such that nodes that receive more connections are more central and those that receive less are more peripheral. Note, every time you plot the network, it will have a slightly different layout. To preserve the node positions you can use the `set.seed()` function in the code chunk above. When it is executed before plotting, the nodes will always appear in the same location. You can change the position of the nodes by using a different seed number. 
+This is the most basic network plot where each node (with the numbers 1 to `r vcount(net)`) and their edges are plotted such that nodes that receive more connections are more central and those that receive less are more peripheral. Note, every time you plot the network, it will have a slightly different layout. 
 
 ### Network layout
 There are also ways to plot networks in entirely different layouts. In the following graph, for example, we put nodes in a ring layout or on a grid. We use the different `layout.x()` functions in `ìgraph` in combination with the `layout=` argument of the plotting function. Notice we are not using the usual `ggplot` function to plot, as we make use of the specific functionalities of `igraph`.
