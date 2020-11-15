@@ -172,7 +172,6 @@ age <- sample(x = 18:80, size = vcount(net), replace = TRUE)
 # Select colours
 col <- heat.colors(n = 80, rev = TRUE)[age]
 # Plot network with col
-set.seed(1)
 plot(net, 
      vertex.color = col, 
      vertex.label = age,
@@ -210,7 +209,6 @@ Because we have colours representing the age, we may want to remove the labels i
 
 ```{r 11.16, fig.cap="A cleaner version of the same network."}
 net <- as.undirected(net)
-set.seed(1)
 plot(net, 
      vertex.color = V(net)$col, 
      vertex.label = NA,
