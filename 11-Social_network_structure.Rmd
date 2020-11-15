@@ -492,40 +492,38 @@ ggplot(data_bnd_time) +
 
 Now we can say that with more friends, information (or gossip) does not only spread to larger proportions of a population but it does so faster. This is true for the random networks that we have tested here. However, as mentioned earlier, there are many different network categories that differ in degree distribution, average path length, clustering, and others. With the next model, we will take a closer look at the effect of clustering. 
 
-<!-- done to here AA.
-
-Things to ask Marco:
-(i) consider whether set.seed() is really necessary and, if it is, introduce it.
-(ii) adjust in the plots of the "Gossip diffusion in networked populations" section the label of the legend and the ticks of x-axis.
- 
--->
-
-
-
 ### Complex versus simple contagion information transmission
 
-The spread of information is not only affected by the network shape but also by the mode of information transmission. That is, often information is not transmitted from one individual to another in a simple contagion like manner, where exposure to one informed individual is sufficient, but instead requires increased social facilitation. In other words, often we are more likely to acquire behaviours from others if this behaviour is more frequent in our neighbourhood. This kind of transmission is called 'complex contagion.' A study on the spread of health behaviour reported that a new behaviour spread faster in clustered than in random networks (@centola_spread_2010). The author explained the result by pointing to the increased social feedback a focal individual can receive in clustered networks, where neighbours are more likely neighbours with each other, as compared to random networks. Neighbours are more likely to have acquired the same behaviour than random individuals. And so, being connected to more individuals that are connected with each other increases the likelihood to also acquire the behaviour. Let us model complex contagion to better understand how the mode of transmission affects the speed of diffusion in different networks. 
+Another factor that affects the spread of information in networks is the mode of information transmission. That is, often information is not transmitted from one individual to another in a simple contagion-like manner, where exposure to one informed individual is sufficient, but instead requires increased social facilitation. In other words, often we are more likely to acquire behaviours from others if this behaviour is more frequent in our neighbourhood. This kind of transmission is called 'complex contagion'. A study on the spread of health behaviour reported that a new behaviour spread faster in clustered than in random networks (@centola_spread_2010). The author explained the result by pointing to the increased social feedback a focal individual can receive in clustered networks, where neighbours are more likely also neighbours with each other, as compared to random networks. Let us model complex contagion to better understand how the mode of transmission affects the speed of diffusion in different networks. 
 
-In the previous iteration of `gossip_model()`, we select a random neighbour, $j$, of a focal individual $i$. If $j$ has gossip then $i$ will acquire the gossip with certainty. Say, $i$ has 3 neighbours of which only one has gossip. The probability to acquire gossip within the next round, $p_g$, is $1/3$, as there is a 1 in 3 chance that we randomly pick the neighbour with gossip. So, instead of writing:
+In the previous iteration of `gossip_model()`, we selected a random neighbour, $j$, of a focal individual $i$. If $j$ had gossip then $i$  acquired the gossip with certainty. For example, if $i$ had 3 neighbours of which only one had gossip, his probability to acquire gossip within the next round, $p_g$, was $1/3$, as there is a 1 in 3 chance that we randomly pick the neighbour with gossip. So, instead of writing:
+
 ```{r 11.41, eval=FALSE}
 j <- sampling(x = which(nei), size = 1)
 if(gossip[j]){
   gossip[i] <- TRUE
 }
 ```
-we could also write:
+
+We could also write:
+
 ```{r 11.42, eval=FALSE}
 p_g <- sum(gossip * nei) / length(nei)
 if(runif(n = 1, min = 0, max = 1) <= p_g){
   gossip[i] <- TRUE
 }
 ```
-Here, the `if` statement is true if a value that is randomly drawn from a uniform distribution (that is what `runif()` is doing), is smaller or equal to the probability to encounter an individual with gossip, $p_g$ (i.e. number of neighbours with gossip, `sum(gossip*nei)`, divided by the number of neighbours, `length(nei)`). Note that `gossip*nei` returns a boolean vector that is only `TRUE` for individuals that are both a neighbour and having gossip. As you can see, the probability that $i$ acquires gossip scales linearly with the proportion of neighbours with gossip. This is a good approximation for the spread of information following simple contagion. In the case of complex contagion, we assume that occasional interactions (or exposures) are less important than more frequent ones. We might require an individual to be exposed to gossip repeatedly. This could be, say, the repeated encounter with a gossiper or encounter of more than one gossiper. We can then write: 
+
+Here, the `if` statement is true if a value that is randomly drawn from a uniform distribution (that is what `runif()` is doing), is smaller or equal to the probability to encounter an individual with gossip, $p_g$ (i.e. number of neighbours with gossip, `sum(gossip * nei)`, divided by the number of neighbours, `length(nei)`). Note that `gossip * nei` returns a boolean vector that is only `TRUE` for individuals that are both a neighbour and have gossip. As you can see, the probability that $i$ acquires gossip scales linearly with the proportion of neighbours with gossip. This is a good approximation for the spread of information following simple contagion. 
+
+In the case of complex contagion, instead, we assume that occasional interactions (or exposures) are less important than more frequent ones. We might require an individual to be exposed to gossip repeatedly. This could be, say, the repeated encounter with a gossiper or encounter of more than one gossiper. We can then write: 
+
 ```{r 11.43, eval=FALSE}
 if(runif(n = 1, min = 0, max = 1) <= (sum(nei) / length(nei))^e){
   gossip[i] <- TRUE
 }
 ```
+
 where the exponent `e` affects the shape of the function that describes the probability to acquire gossip:
 
 ```{r 11.44, fig.cap="In simple contagion the probability to acquire gossip scales linearly with the proportion of neighbours with gossip, whereas it increases superlinearly (here exponentially) in the case of complex contagion."}
@@ -536,8 +534,9 @@ contagion <- tibble(
   x = rep(prop_nei_info, 2), 
   y = c(prop_nei_info^e[1], prop_nei_info^e[2]))
 
-ggplot(contagion) + 
-  geom_point(aes(x = x, y = y, col = contagion)) +
+ggplot(contagion, aes(x = x, y = y, col = contagion)) + 
+  geom_point() +
+  geom_line() +
   xlab("proportion of neighbours with gossip") + 
   ylab("probability to acquire gossip") +
   theme_bw()
@@ -545,7 +544,7 @@ ggplot(contagion) +
 
 The figure shows that in the case of simple contagion ($e=1$), the probability to acquire gossip increases linearly with the proportion of gossiping neighbours. For complex contagion (e.g. $e=2$), however, acquisition increases exponentially. 
 
-Let us test whether we can simulate the empirical results from the study we cited earlier, i.e. that information spreading in a complex contagion like manner spreads faster in clustered networks. To simulate networks that are as close as possible to the ones used by @centola_spread_2010 we will use the `make_lattice()` function in igraph. It sets up simple lattice graphs of varying dimensions and lengths along each dimension. In our case, we want a two-dimensional graph, of 100 individuals, and a neighbourhood size of two, i.e. an individual is not only connected to the direct neighbours in a square lattice but also the direct neighbour of each of their neighbours. Additionally, we set the `circular` argument to be true. This connects the nodes of one edge of the lattice with the nodes on the opposite side. The resulting graph looks like a torus. 
+Let us test whether we can simulate the empirical results from the study we mentioned earlier, i.e. that information spreading in a complex contagion-like manner spreads faster in clustered networks. To simulate networks that are as close as possible to the ones used by @centola_spread_2010 we will use the `make_lattice()` function in igraph. The function sets up simple lattice graphs of varying dimensions and lengths along each dimension. In our case, we want a two-dimensional graph, of 100 individuals, and a neighbourhood size of two, i.e. an individual is not only connected to the direct neighbours in a square lattice but also the direct neighbour of each of their neighbours. Additionally, we set the `circular` argument to be true. This connects the nodes of one edge of the lattice with the nodes on the opposite side. The resulting graph looks like a torus. 
 
 ```{r 11.45}
 net_clust <- make_lattice(length = 10, dim = 2, circular = T, nei = 2)
@@ -586,7 +585,7 @@ par(mfrow=c(1,1))
 ```
 -->
 
-Now that we have the networks, let us modify the `gossip_model`. We will change the function such that (1) we can hand over the network directly (`net` argument), (2) this network will be rewired if an additional argument is set to `TRUE` (`rewire` argument), (3) contagion can be simple or complex, which we will set with one more argument (`e`). 
+Now that we have the networks, let us modify the `gossip_model()` function. We will change the function such that (1) we can hand over the network directly (`net` argument), (2) this network will be rewired if the additional argument `rewire` is set to `TRUE`, and (3) contagion can be simple or complex, which we will set with one more argument (`e`). 
 
 ```{r 11.50}
 gossip_model_2 <- function(net, rewire, e = 1, r_max, sim = 1){
@@ -639,7 +638,7 @@ gossip_model_2 <- function(net, rewire, e = 1, r_max, sim = 1){
 
 Note that in this function we also updated the output. Now, we return not only the proportion of individuals with gossip at each simulation round but also the time at which the maximum proportion was reached (`time_to_max`). To make plotting easier, we also return the `e` argument, whether the network was rewired (if `TRUE` we return `random`, if `FALSE` we return `clustered`), and the simulation count `sim`. 
 
-You might have also noticed that we turned the numeric adjacency matrix into a boolean matrix that only contains `TRUE` and `FALSE` values (using `adjm > 0`. This is a little trick to speed up simulations. Instead of repeatedly asking R to identify which value in an individual's nieghbourhood is a `1`, we can get the same result instantly by turning all `1`s into `TRUE`s. 
+You might have also noticed that we turned the numeric adjacency matrix into a boolean matrix that only contains `TRUE` and `FALSE` values (using `adjm > 0`). This is a little trick to speed up simulations. Instead of repeatedly asking R to identify which value in an individual's neighbourhood is a `1`, we can get the same result instantly by turning all `1`s into `TRUE`s. 
 
 Let us now run the simulation for random and clustered networks, and for simple ($e=1$) and complex ($e=2$) contagion:
 
