@@ -131,7 +131,7 @@ Now that we have our network in the correct shape, we can use the plot function 
 plot(net)
 ```
 
-This is the most basic network plot where each node (with the numbers 1 to `r vcount(net)`) and their edges are plotted such that nodes that receive more connections are more central and those that receive less are more peripheral. Note, every time you plot the network, it will have a slightly different layout. 
+This is the most basic network plot where each node (with the numbers 1 to `r vcount(net)`) and their edges are plotted such that nodes that receive more connections are more central and those that receive less are more peripheral. 
 
 ### Network layout
 There are also ways to plot networks in entirely different layouts. In the following graph, for example, we put nodes in a ring layout or on a grid. We use the different `layout.x()` functions in `ìgraph` in combination with the `layout=` argument of the plotting function. Notice we are not using the usual `ggplot` function to plot, as we make use of the specific functionalities of `igraph`.
@@ -152,6 +152,7 @@ There are many more layout functions that will result in slightly different visu
 In addition to the layout, which affects the placing of nodes, we can also change the actual appearance of nodes and edges, such as their size and width, colour, labelling, and more. While the igraph manual is a good reference to figure out all the possibilities, here is the general principle: any attribute we want to change needs either the `vertex.` or `edge.` prefix. For example, to change the colour of all vertices, we would use `vertex.color=`. Have a look at the following example for more ideas of what we can change:
 
 ```{r 11.12, fig.cap="Using syling arguments with the `plot()` function allows to manipulate the appearence of vertices, edges, and labels."}
+set.seed(1)
 plot(net, 
      vertex.color = "dodgerblue", 
      vertex.label.color = "white",
@@ -164,7 +165,9 @@ plot(net,
 
 As you can see in the graph above, we have changed the colour of the nodes and text, and their overall size (attributes starting with `vertex.`). We have also changed the colour of the edges, their width, and the size of the arrow tips (attributes starting with `edge.`).
 
-We can go further than simply using colours to make our neworks look nice. We can also use colour to indicate additional information. Say, we know the age of each individual that is represented by a node in out network. How can we instruct `plot()` to use a different colour for each node depending on its age? To do this, we need to first select colours to represent different ages. Then, we can hand this over to the `vertex.color` argument. Below, we use a function called `heat.colors()`. It creates a vector of $n$ contiguous colours that span the 'heat' colour space (from white over yellow to red). We generate 80 different shades and then select `r vcount(net)` colours (we use the `vcount()` function to count the number of vertices in our network) according to the `age` vector:
+Also note that every time you plot a network, it will look slightly different (the position of nodes changes between plots). To preserve the node positions we will use the `set.seed()` function here. When it is executed before plotting, the nodes will always appear in the same location. You can change the position of the nodes by using a different seed number (here we use 1). The `set.seed()` function affects how your computer generates random numbers. For example, repeatedly running `runif(1)` will draw a different number from a uniform distribution every time. However, if we repeatedly run `set.seed(1); runif(1)` we will always receive the same number. By setting a seed we can recover the same (pseudo) random process between different executions. This is what we are using here when we are plotting the same network repeatedly to retain its original layout. 
+
+Additional to colour our network, we can also use colour to indicate additional information. Say, we know the age of each individual that is represented by a node in out network. How can we instruct `plot()` to use a different colour for each node depending on its age? To do this, we need to first select colours to represent different ages. Then, we can hand this over to the `vertex.color` argument. Below, we use a function called `heat.colors()`. It creates a vector of $n$ contiguous colours that span the 'heat' colour space (from white over yellow to red). We generate 80 different shades and then select `r vcount(net)` colours (we use the `vcount()` function to count the number of vertices in our network) according to the `age` vector:
 
 ```{r 11.13, fig.cap="In this plot we indicate a node's age by colouring the node with a different colour (pale yellow: younger, red: older)"}
 # Generate random ages
@@ -172,6 +175,7 @@ age <- sample(x = 18:80, size = vcount(net), replace = TRUE)
 # Select colours
 col <- heat.colors(n = 80, rev = TRUE)[age]
 # Plot network with col
+set.seed(1)
 plot(net, 
      vertex.color = col, 
      vertex.label = age,
@@ -209,6 +213,7 @@ Because we have colours representing the age, we may want to remove the labels i
 
 ```{r 11.16, fig.cap="A cleaner version of the same network."}
 net <- as.undirected(net)
+set.seed(1)
 plot(net, 
      vertex.color = V(net)$col, 
      vertex.label = NA,
@@ -230,12 +235,13 @@ net
 We assigned the friendship strength values to an attribute called `weight`. Take a look at the `net` object. It now says `U-W-`, indicating that it is both an **u**ndirected as well as a **w**eighted network. To plot the edge weights, we instruct the plotting function to use the `E(net)$weight` values for the `edge.width` parameter (note that we multiply the values by some value to make the strokes bigger in the final plot):
 
 ```{r 11.18, fig.cap="To indicate different strength in the relationship of two nodes, we can vary the width of edge between them."}
+set.seed(1)
 plot(net, 
      vertex.color = V(net)$col, 
      vertex.label = NA,
      vertex.size = 9,
      edge.width = E(net)$weight*5,
-     edge.arrow.size = 0.5)
+     edge.arrow.size = 0.5, main=" ...")
 ```
 
 You can now observe strong and weak relationships between individuals, their location relative to each other, and how they cluster. Let us now look at how to quantify the observed network characteristics.
@@ -336,6 +342,7 @@ Sometimes it is good to visualise these characteristics as colour in your networ
 between <- betweenness(graph = net)
 col <- heat.colors(n = max(between) + 1, rev = TRUE)[between + 1]
 # Plot network with col
+set.seed(1)
 plot(net, 
      vertex.color = col, 
      vertex.label = NA,
@@ -440,6 +447,8 @@ We can see that there is a big difference between 1 and 2 friends on average but
 
 We should run the simulation more than once and average the results. That way, we can say more definitely how average degree affects the speed and level of spread. We can also measure how long it takes for some gossip to spread in more than, say, $75\%$ of the population. Again, we will use an `lapply()` function to run our simulations. Note that this time, we use an indicator `i` to number the current simulation run (by setting `sim = i`). This way, we can keep the results from repeated simulation runs with the same starting parameters separate from each other. 
 
+Note, that we set a seed here. Due to the stochastic nature of this simulation, results might look different between different runs. For illustrative purposes we use a seed here (in this case 5). 
+
 ```{r 11.37, cache=TRUE}
 N <- 100
 f <- rep(c(1/N, 2/N, 3/N, 5/N, 8/N, 10/N), each = 10)
@@ -464,9 +473,9 @@ As you can see, each simulation run is a bit different even of they have the sam
 ```{r 11.39, fig.cap="Here we plot the end points of each simulation from the previous plot as a boxplot. This, again, shows that there is a dramatic difference of diffusion in networks with 1 to 3 friends, but far less in those with 5 and more friends."}
 data_bnd_last <- data_bnd[data_bnd$time == max(data_bnd$time), ]
 ggplot(data_bnd_last) + 
-  geom_boxplot(aes(x = (f * N), y = proportion, fill = factor(f * N))) + 
+  geom_boxplot(aes(x = factor(f * N), y = proportion)) + 
   xlab("average number of friends") +
-  ylab("proportion of individuals with gossip") +
+  ylab("proportion of individuals with gossip") + 
   theme_bw()
 ```
 
@@ -482,7 +491,7 @@ data_bnd_time <- lapply(data, function(dat){
 data_bnd_time$time_to_x[is.na(data_bnd_time$time_to_x)] <- 50
 
 ggplot(data_bnd_time) + 
-  geom_boxplot(aes(x = (f * N), y = time_to_x, fill = factor(f * N))) + 
+  geom_boxplot(aes(x = factor(f * N), y = time_to_x)) + 
   xlab("average number of friends") +
   ylab("time to spread to 75% of population") +
   theme_bw()
