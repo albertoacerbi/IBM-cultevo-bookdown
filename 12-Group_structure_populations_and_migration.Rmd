@@ -1,199 +1,234 @@
 # Group structured populations and migration
 
-Many simulations assume well-mixed populations, that is, populations of individuals that have an equal chance of encountering each other. In the previous chapter, we have looked at the effects of structured interactions on the transmission of cultural traits. Both, structured and unstructured populations, can be good approximations to the real world, depending on the context and research question. What about structured populations, a combination of the two. That is, a large population of individuals is divided into subsets, where individuals are more likely to encounter individuals from the same subset but much less likely to encounter individuals from a different subset. As such learning would only occur within each subset. However, individuals may migrate between subsets, bringing along their own selection or expressions of cultural traits. 
+Many simulations assume well-mixed populations, that is, populations of individuals that have an equal chance of encountering each other. In the previous chapter, we have looked at the effects of structured interactions on the transmission of cultural traits. Both, structured and unstructured populations, can be good approximations to the real world, depending on the context and research question. What about structured populations, a combination of the two. That is, a large population of individuals is divided into subsets, where individuals are more likely to encounter individuals from the same subset but much less likely to encounter individuals from a different subset. As such learning would only occur within each subset. However, individuals may migrate between subsets, bringing along their own selection of cultural traits, or might visit another subset and then bring a new cultural trait back home. 
 
 ## Modelling migration
 
-In this chapter, we will simulate this movement between subsets to study its effect on the transmission of a socially acquired behaviour. We model a population of size $n$, with $s$ subsets, and $b$ instances of a behavioural trait. For most of this chapter, we assume that there are two versions of the behaviour, for example, two individuals greet each other either with a handshake or by elbow bump. You will see that there are many opportunities to alter the model (have more subsets, behaviours, learning events, etc.). 
+In this chapter, we will simulate this movement of traits between subsets and study its dynamics. We model a population of size $n$, with $s$ subsets, and $b$ instances of a behavioural trait. For most of this chapter, we assume that there are two versions of this behaviour, for example, two individuals greet each other either with a handshake or by bumping elbows. You will see that there are many opportunities to alter the model (e.g. more subsets, behaviours, learning events, etc.). 
 
-We will start very simply with one large population where individuals acquire a behavioural trait from a random individual in their population, and then add layers to the model. Let us set up a population:
+We will start very simply with one large population where individuals acquire a behavioural trait from a random individual in their population, and then add layers to the model. Let us set up a population. Because we are only interested which instance of a particular behaviour an individual expresses, each individual can be fully described by its behaviour, and so, we can represent the entire population as a vector of expressed behaviours (`behaviours`). 
 
 ```{r 12.1}
 n <- 100
 b <- 2
 
 behaviours <- sample(x = b, size = n, replace = TRUE)
-behaviours[1:10]
 table(behaviours)
 ```
-<!--explain what table() does-->
-Because we are only interested which instance of a particular behaviour an individual expresses, each individual can be fully described by its behaviour, and so, we can represent the entire population as a vector of expressed behaviours (`behaviours`). 
 
-Everyone in our population is constantly exhibiting their behaviour. Occasionally, one of the individuals will copy the behaviour of another individual. To simulate this behavioural updating, we select two random individuals (an observer and a model) and then copy the model's behaviour into the observer's entry. We wrap a loop around these two steps to simulate repeated updating events and add a record variable to store the frequency of each of the behaviours.
+Note that the `table()` function counts each element of a given vector. It is similar to `tabulate()` which we used previously, however, `table()` returns a named vector, so that you know exactly which element is present how many times. 
+
+Each individual in our population expresses only one behaviour. Occasionally, one of the individuals will copy the behaviour of another individual. To simulate this behavioural updating, we a random individual (the observer), which copies a randomly selected behaviour from the population. This approach is identical to the unbiased learning in our earlier chapters. We can simulate repeated updating events by wrapping a `for` loop around the code. Additionally, we will add a record variable (`rec_behav`) to store the frequency of each behaviour.
 
 ```{r 12.2}
-t <- 1000
-rec_behav <- matrix(NA, nrow = t, ncol = b)
+r_max <- 1000
+rec_behav <- tibble(time = 1:t, b1 = 0, b2 = 0)
 
-for(timestep in 1:t){
+for(round in 1:r_max){
   # unbiased copying of a behaviour by a random individual
   behaviours[ sample(x = n, size = 1) ] <- sample(x = behaviours, size = 1)
-  # record the frequency of each trait in each timestep
-  recbehav[timestep,] <- table(behaviours)
+  # record the frequency of each trait in each round
+  rec_behav[round, "b1"] <- sum(behaviours==1)
+  rec_behav[round, "b2"] <- sum(behaviours==2)
 }
 ```
 
-Now, we can plot the frequency of each behaviour over time, which we recorded in the `recbehav` matrix.
-<!--explain melt(), can we not just use a function from tidyverse?-->
-```{r 12.3, fig.cap="On average the frequenca of two behaviours that are transmitted without a bias will fluctuate around 0.5."}
-library(ggplot2)
-library(reshape2)
-recbehav_d <- melt(recbehav)
-colnames(recbehav_d) <- c("time", "behaviour","freq")
+To plot the results, we first need to turn our "wide" data (where repeated measures/different categories are in the same line) into "long" data (where each line has only one observation/category). While the former is easier to read, the latter is the format that is more useful in combination with `ggplot2`. To "rotate" our data we can use the `pivot_longer()` function. In its arguments we tell it to combine the results of columns `b1` and `b2` into `beaviour`, which indicates the name of the behaviour, and `freq`, which is the frequency of that behaviour. The function will repeat the entries of the `time` column accordingly:
 
-ggplot(recbehav_d) + 
-  geom_line(aes(x = time, y = freq/n, col = factor(behaviour))) + 
+```{r 12.3, message=FALSE}
+library(tidyverse)
+rec_behav_l <- pivot_longer(data = rec_behav, names_to = "behaviour", values_to = "freq", cols=c("b1","b2"))
+rec_behav
+rec_behav_l
+```
+
+Now, we can plot the frequency of each behaviour over time:
+
+```{r 12.4, fig.cap="On average the frequenca of two behaviours that are transmitted without a bias will fluctuate around 0.5."}
+ggplot(rec_behav_l) + 
+  geom_line(aes(x = time, y = freq/n, col = behaviour)) + 
   scale_y_continuous(limits = c(0,1)) + 
+  ylab("proportion of population with behaviour") +
   theme_bw()
 ```
 
-As we would have expected from an unbiased transmission, the frequency of the two traits will move around $0.5$. For smaller populations, more traits, or longer time drift will lead to the exclusion of one of the traits. We can test this by using a much smaller population. To do so, let us first wrap the simulation in a function called `migration_model_1()`. 
+As we would expect from an unbiased transmission, the frequency of the two traits will move around $0.5$. 
 
-```{r 12.4}
-migration_model_1 <- function(POPSIZE, NBEHAVIOUR, NTIMESTEPS){
-  behaviours <- sample(x = NBEHAVIOUR, size = POPSIZE, replace = TRUE)
-  recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NBEHAVIOUR)
+We can wrap this code in a function to make it easier to use in the future:
+
+```{r 12.5}
+migration_model_1 <- function(n, b, r_max){
+  behaviours <- sample(x = 1:b, size = n, replace = TRUE)
+  rec_behav <- matrix(NA, nrow = r_max, ncol = b)
   
-  for(timestep in 1:NTIMESTEPS){
-    # choose a random observer and a random individual to observe 
-    observer_model <- sample(x = POPSIZE, size = 2, replace = F)
-    # let observer acquire trait from model
-    behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
-    recbehav[timestep,] <- as.numeric(table(behaviours)) / POPSIZE
+  for(round in 1:r_max){
+    # unbiased copying of a behaviour by a random individual
+    behaviours[ sample(x = n, size = 1) ] <- sample(x = behaviours, size = 1)
+    rec_behav[round,] <- unlist(lapply(1:b, function(B) sum(behaviours==B))) / n
   }
-  return(recbehav)
+  # turn matrix into tibble
+  rec_behav_tbl <- as_tibble(rec_behav)
+  # replace column names V1, V2, ... with b1, b2, ...
+  colnames(rec_behav_tbl) <- paste("b" ,1:b, sep = "")
+  # add a column for each round
+  rec_behav_tbl$time <- 1:r_max
+  # turn wide format into long format data
+  rec_behav_tbl_l <- pivot_longer(data = rec_behav_tbl, names_to = "behaviour", values_to = "freq", !time)
+  # return result
+  return(rec_behav_tbl_l)
 }
 ```
 
-The function makes it easy to quickly run simulations with different input parameters. Here, we run the simulation with a population size of $n=20$:
-<!--again, replace melt with tidyverse equivalent-->
-```{r 12.5, fig.cap="In smaller populations (here, $N=20$), drift might lead to the sudden exclusion of one of the two behaviours from the group, such that the other behaviour becomes fixed."}
+Let us test what would happen if we ran this simulation with a very small population size of $n=20$:
+
+```{r 12.6, fig.cap="In smaller populations (here, $N=20$), drift might lead to the sudden exclusion of one of the two behaviours from the group, such that the other behaviour becomes fixed."}
 # run simulation
-set.seed(3)
-res <- migration_model_1(POPSIZE = 20, NBEHAVIOUR = 2, NTIMESTEPS = 1000)
-# turn results matrix into long format
-recbehav_d <- melt(res)
-# add descriptive column names
-colnames(recbehav_d) <- c("time", "behaviour","freq")
+res <- migration_model_1(n = 20, b = 2, r_max = 1000)
+
 # plot results
-ggplot(recbehav_d) + 
-  geom_line(aes(x = time, y = freq, col = factor(behaviour))) + 
+ggplot(res) + 
+  geom_line(aes(x = time, y = freq, col = behaviour)) + 
   scale_y_continuous(limits = c(0,1)) + 
+  ylab("proportion of population with behaviour") +
   theme_bw()
 ```
 
-As we can see, the two behaviours meander until, by chance, behaviour $1$ is completely replaced by behaviour $2$. 
+We observe that, the two behaviours fluctuate around $0.5$ until, by chance, one behaviour is completely replaced by the other one. This is simply due to drift, which affects all small populations or very long time scales.
 
 
 ## Subdivided population
-Now let us assume that the population we are looking at divided into two subsets, here `clusters`. We will keep track which individual belongs to which cluster and then record the frequency of one of the behaviours, $p$, (the frequency of the other behaviour, $q$, is simply $1-p$) in each cluster. Also, note that cluster size $n$ is the same for all clusters.
+Let us move on from this single population example to a version where the population is divided into subsets or `clusters`. For simplicity let us work with only two behaviours here, so that we only need to track the frequency of one behaviour, $p$, in each subset as the frequency of the other is simply $1-p$. We will also assume that there are the same number, $n$, of individuals in each cluster, $c$. 
 
-```{r 12.6, fig.cap="The frequency of one out of two behaviours in two subsets will fluctuate around 0.5 if individuals are equally likely to learn from individuals in both subsets (or clusters)."}
-migration_model_2 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
-  totalpop <- NPOP*POPSIZE
-  cluster <- sample(x = NPOP, size = totalpop, replace = TRUE)
-  behaviours <- sample(x = NBEHAVIOUR, size = totalpop, replace = TRUE)
-  recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NPOP)
+```{r 12.7}
+migration_model_2 <- function(n, c, r_max){
+  total_pop <- c * n
+  cluster <- rep(1:c, each = n)
+  behaviours <- sample(x = 2, size = total_pop, replace = TRUE)
+  rec_behav <- matrix(NA, nrow = r_max, ncol = c)
   
-  for(timestep in 1:NTIMESTEPS){
-    # choose a random observer and a random individual to observe 
-    observer_model <- sample(x = totalpop, size = 2, replace = F)
-    # let observer acquire trait from model
-    behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
-    # record the relative frequency of behaviour 1 for each cluster
-    recbehav[timestep,] <- unlist(lapply(1:NPOP, function(x) 
-                              sum(behaviours[cluster == x] == 1) / sum(cluster == x)
-                            ))
+  for(round in 1:r_max){
+    behaviours[ sample(x = total_pop, size = 1) ] <- sample(x = behaviours, size = 1)
+    # re_calculate p for each cluster
+    for(clu in 1:c){
+      rec_behav[round, clu] <- sum(behaviours[cluster == clu] == 1) / n
+    }
   }
-  
-  recbehav_d <- melt(recbehav)
-  colnames(recbehav_d) <- c("time", "cluster","freq")
-  return(recbehav_d)
+  rec_behav_tbl <- as_tibble(rec_behav)
+  # replace column names V1, V2, with c1, c2 to represent each cluster
+  colnames(rec_behav_tbl) <- paste("c", 1:c, sep = "")
+  rec_behav_tbl$time <- 1:r_max
+  rec_behav_tbl_l <- pivot_longer(data = rec_behav_tbl, names_to = "cluster", 
+                                  values_to = "p", !time)
+  return(rec_behav_tbl_l)
 }
+```
 
+This function is very similar to `migration_omdel_1()` but accounts for the additional clusters. For example, the columns of `rec_behav` now stores $p$ for each cluster. We calculate these values in every time step. We could also just calculate it for the cluster of the observing individual, however, we if we keep the calculation more general, we will not have to change the code if we allow individuals to permanently move from one cluster to another, in which case we would need to calculate $p$ for both clusters. 
+
+Also note that this time we did not tell `pivot_longer()` which columns to pivot but which one we want to keep unchanged (`!time`). This is because we do not know the numbers of columns before we run the simulation. Therefore, it is easier to just make an exception for the time column.
+
+Let us run the simulation for 4 subsets with each 50 individuals:
+
+```{r 12.8, fig.cap="The frequency of one out of two behaviours in two subsets will fluctuate around 0.5 if individuals are equally likely to learn from individuals in both subsets (or clusters)."}
 # run simulation
-set.seed(4)
-res <- migration_model_2(NPOP = 2, POPSIZE = 100, NBEHAVIOUR = 2, NTIMESTEPS = 1000)
+res <- migration_model_2(n = 50, c = 4, r_max = 1000)
 
 # plot results
 ggplot(res) + 
-  geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
+  geom_line(aes(x = time, y = p, col = cluster)) + 
   scale_y_continuous(limits = c(0,1)) + 
-  ylab("Relative frequency of behaviour 1") + 
+  ylab("proportion of behaviour 1 in cluster") + 
   theme_bw()
 ```
 
-Running this code repeatedly will show you two things. First, on average the frequency of each behaviour will still be around 0.5, and second that the frequency changes are highly correlated between the two subsets. This is expected because, with the current version of our model, individuals do not distinguish between or have different access to individuals of either cluster. 
+Executing this code repeatedly will show you two things. First, on average the frequency of each behaviour will still be around $0.5$, and second that the frequency changes are correlated between the all subsets. This is expected because, with the current version of our model, individuals do not distinguish between or have different access to individuals of either cluster. In fact, the fluctuations we observe here are purely stochastic and based on the relatively small subsets (try running the code with e.g. $N=1000$).   
+
+--CONTINUE HERE--
 
 What would happen if members of a cluster preferentially learn from others within their cluster? This might be the case where individuals spent most of their time in their subsets. To make sure that we choose an observer and a model from the same cluster we can use the `prob` argument in the `sample()`. This argument gives a weight (or probability) with which an element of a provided set is chosen. By default, each element has a weight of $1$ and thus is equally likely to be selected. To limit our scope to individuals within the same cluster, we can simply set the weight to $0$ for all individuals that are in a different cluster. And so, we first select a cluster and then choose two individuals from that cluster to be our observer and model. We will add an `if` statement to make sure that there are at least two individuals in the cluster:
 
-```{r 12.7, fig.cap="When individuals copy behaviours only from individuals within their own subset, we find that the frequency of behaviour 1 becomes uncorrelated between the two subsets. In this example, behaviour 1 is lost in cluster 2, whereas it is still present in cluster 1 at the end of the simulation."}
-migration_model_3 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
-  totalpop <- NPOP*POPSIZE
-  cluster <- sample(x = NPOP, size = totalpop, replace = TRUE)
-  behaviours <- sample(x = NBEHAVIOUR, size = totalpop, replace = TRUE)
-  recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NPOP)
+```{r 12.9, fig.cap="When individuals copy behaviours only from individuals within their own subset, we find that the frequency of behaviour 1 becomes uncorrelated between the two subsets. In this example, behaviour 1 is lost in cluster 2, whereas it is still present in cluster 1 at the end of the simulation."}
+# turn matrix into tibble
+matrix_to_tibble <- function(m){
+  m_tbl <- as_tibble(m)
+  # replace column names V1, V2, ... with c1, c2, ...
+  colnames(m_tbl) <- paste("c" ,1:ncol(m), sep = "")
+  # add a column for each round
+  m_tbl$time <- 1:nrow(m)
+  # turn wide format into long format data
+  m_tbl_l <- pivot_longer(data = m_tbl, names_to = "cluster", values_to = "p", !time)
+  # return result
+  return(m_tbl_l)
+}
+
+migration_model_3 <- function(n, c, r_max){
+  total_pop <- c * n
+  cluster <- rep(1:c, each = n)
+  behaviours <- sample(x = 2, size = total_pop, replace = TRUE)
+  rec_behav <- matrix(NA, nrow = r_max, ncol = c)
   
-  for(timestep in 1:NTIMESTEPS){
+  for(round in 1:r_max){
     # choose a random cluster
-    clusterid <- sample(NPOP, 1)
+    clusterid <- sample(c, 1)
     # if there are at least two individuals in this cluster
     if(sum(cluster == clusterid)>1){
       # choose a random observer and a random individual to observe within the same cluster 
-      observer_model <- sample(x = totalpop, size = 2, replace = F, 
+      observer_model <- sample(x = total_pop, size = 2, replace = F, 
                                prob = (cluster == clusterid)*1)
       behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
     }
-    recbehav[timestep,] <- unlist(lapply(1:NPOP, function(x) 
-      sum( behaviours[cluster == x] == 1 ) / sum(cluster == x)))
+    
+    rec_behav[round,] <- unlist(lapply(1:c, function(C) sum(behaviours[cluster==C]==1))) / n
   }
-  
-  recbehav_d <- melt(recbehav)
-  colnames(recbehav_d) <- c("time", "cluster","freq")
-  return(recbehav_d)
+  return(matrix_to_tibble(m = rec_behav))
 }
 
-set.seed(20)
-res <- migration_model_3(NPOP = 2, POPSIZE = 50, NBEHAVIOUR = 2, NTIMESTEPS = 1000)
+res <- migration_model_3(n =20, c=3, r_max = 1000)
 ggplot(res) + 
-  geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
+  geom_line(aes(x = time, y = p, col = cluster)) + 
   scale_y_continuous(limits = c(0,1)) + 
-  ylab("Relative frequency of behaviour 1") + 
+  ylab("proportion of behaviour 1 in cluster") + 
   theme_bw()
 ```
 
 When we run this simulation repeatedly, you will see that sometimes one of the behaviours gets lost in one, both, or neither of the clusters. Because in this iteration of our simulation there are no interactions between individuals of different clusters, we are essentially simulating two independent populations. You can see that this is the case when we start the simulation monomorphic clusters, i.e. all individuals in a cluster start with the same behaviour:
 
 ```{r 12.8, fig.cap="When two subsets start out fully saturated with one of two different behaviours and if there is no learning between clusters, the intial frequencies will remain unchanged."}
-migration_model_4 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
-  totalpop <- NPOP*POPSIZE
-  behaviours <- rep(sample(NBEHAVIOUR,size = NPOP, replace = TRUE), each = POPSIZE)
-  cluster <- rep(1:NPOP, each = POPSIZE)
-  recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NPOP)
-  
-  for(timestep in 1:NTIMESTEPS){
-    clusterid <- sample(NPOP, 1)
-    if(sum(cluster == clusterid)>1){
-      observer_model <- sample(x = totalpop, size = 2, replace = FALSE, 
-                               prob = (cluster == clusterid)*1)
-      behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
-    }
-    recbehav[timestep,] <- unlist(lapply(1:NPOP, function(x) 
-      sum( behaviours[cluster == x] == 1 ) / sum(cluster == x)))
-  }
-  
-  recbehav_d <- melt(recbehav)
-  colnames(recbehav_d) <- c("time", "cluster","freq")
-  return(recbehav_d)
-}
+ 
 
-set.seed(1)
-res <- migration_model_4(NPOP = 2, POPSIZE = 50, NBEHAVIOUR = 2, NTIMESTEPS = 100)
-ggplot(res) + 
-  geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
-  scale_y_continuous(limits = c(0,1)) + 
-  ylab("Relative frequency of behaviour 1") + 
-  theme_bw()
+NOT SURE WE NEED THIS; probably just say it
+
+
+
+# migration_model_4 <- function(NPOP, POPSIZE, NBEHAVIOUR, NTIMESTEPS){
+#   totalpop <- NPOP*POPSIZE
+#   behaviours <- rep(sample(NBEHAVIOUR,size = NPOP, replace = TRUE), each = POPSIZE)
+#   cluster <- rep(1:NPOP, each = POPSIZE)
+#   recbehav <- matrix(NA, nrow = NTIMESTEPS, ncol = NPOP)
+#   
+#   for(timestep in 1:NTIMESTEPS){
+#     clusterid <- sample(NPOP, 1)
+#     if(sum(cluster == clusterid)>1){
+#       observer_model <- sample(x = totalpop, size = 2, replace = FALSE, 
+#                                prob = (cluster == clusterid)*1)
+#       behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
+#     }
+#     recbehav[timestep,] <- unlist(lapply(1:NPOP, function(x) 
+#       sum( behaviours[cluster == x] == 1 ) / sum(cluster == x)))
+#   }
+#   
+#   recbehav_d <- melt(recbehav)
+#   colnames(recbehav_d) <- c("time", "cluster","freq")
+#   return(recbehav_d)
+# }
+# 
+# set.seed(1)
+# res <- migration_model_4(NPOP = 2, POPSIZE = 50, NBEHAVIOUR = 2, NTIMESTEPS = 100)
+# ggplot(res) + 
+#   geom_line(aes(x = time, y = freq, col = factor(cluster))) + 
+#   scale_y_continuous(limits = c(0,1)) + 
+#   ylab("Relative frequency of behaviour 1") + 
+#   theme_bw()
 ```
 
 As we can see, there is no interaction between the two clusters and the frequency of behaviour 1 remains unchanged. 
