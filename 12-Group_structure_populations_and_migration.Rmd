@@ -427,7 +427,7 @@ Our results show that contact and migration are not interchangeable or symmetric
 
 ## Model extensions
 ### Innovation or mutation {-}
-An interesting extension to this model is the addition of innovation or mutation. For example, individuals could invent completely new behaviours (in this case we would not work with a fixed behaviour number $b$), or with a certain probability, an individual might try to copy behaviour 2 but acquires behaviour 1. These are all mechanisms that would diversity add to the model. 
+An interesting extension to this model is the addition of innovation or mutation. For example, individuals could invent completely new behaviours (in this case we would not work with a fixed behaviour number $b$), or with a certain probability, an individual might try to copy behaviour 2 but acquires behaviour 1 (akin to mutation). These are all mechanisms that would add diversity to the model. 
 
 <!-- ### Acculturation {-} -->
 
@@ -439,7 +439,7 @@ So far, an individual is changing its behaviour based on observing one other ind
 To achieve this behaviour we can change the `observer_model` part of our model to:
 ```{r, eval=FALSE}
 if(sum(cluster == cluster_id) > m){
-  observer_model <- sample(x = totalpop, size = m + 1, replace = FALSE,
+  observer_model <- sample(x = total_pop, size = m + 1, replace = FALSE,
                            prob = (cluster == cluster_id) * 1)
   behaviours[ observer_model[1] ] <-
     behaviours[ sample(observer_model[2:(m + 1)], size = 1) ]
@@ -450,15 +450,15 @@ where $m$ is the number of models to observe. (Note, due to the peculiarities of
 ### Variable migration probability among subsets {-}
 Finally, this model can be extended to accommodate different population structures. In this chapter, we have only looked at symmetric connections between subsets (all subsets are connected and migration between them is equally likely). But the structure could also be a line, a circle, a star, and others, where not all subsets are connected (missing links) or where migration probability is low (using weighted connections). This can be useful to generally better understand how population structure will affect transmission. But it can also be used to model specific scenarios if there is existing data on population structure. 
 
-For this iteration of the base model, we need to change the `migration` section. Instead of choosing randomly among other clusters, we would provide a probability vector to the `sample()` function that reflects the probabilities to move from one to another subset. As an example, let us assume we are looking at three subsets $\{A, B, C\}$. A simple structure is a line, where $A$ is connected with $B$ and $B$ is connected with $C$, or `A--B, B--C`. We can use an adjacency matrix to describe the probability to move from one subset to another:
+For this iteration of the base model, we need to change the `migration` section. Instead of choosing randomly among other clusters, we would provide a probability vector to the `sample()` function that reflects the probabilities to move from one to another subset. As an example, let us assume we are looking at three subsets $\{A, B, C\}$. A simple structure is a line, where $A$ is connected with $B$, and $B$ is connected with $C$, or `A--B, B--C`. We can use an adjacency matrix to describe the probability to move from one subset to another:
 ```{r}
 adj <- matrix(c(0,1,0,  1,1,1,  0,1,0), nrow = 3)
 adj
 ```
-If rows are the starting and columns the destiny subsets, then this matrix tells us that an individual in subset $A$ (first row) can move to $B$ (second column entry is a one) but not to $C$ (last column entry is a zero). Now, when we determine that an individual is moving to a different group, we can simply recall the correct row of the `adj` matrix based on the individual's `cluster_id`:
+If rows are the starting and columns the end subsets, then this matrix tells us that an individual in subset $A$ (first row) can move to $B$ (second column entry is 1) but not to $C$ (last column entry is 0). Now, when we determine that an individual is moving to a different group, we can simply recall the correct row of the `adj` matrix based on the individual's `cluster_id`:
 ```{r, eval=FALSE}
-if((runif(1,0,1) <= MIGRATION) & (NPOP > 1)){
-  cluster[ observer_model[1] ] <- sample((1:NPOP), size = 1, prob = adj[cluster_id,])
+if((runif(1,0,1) <= p_m) & (c > 1)){
+  cluster[ observer_model[1] ] <- sample((1:c), size = 1, prob = adj[cluster_id,])
 }
 ```
 Also, this piece of code allows us to use non-binary values, where small values represent a low probability to move from one to another subset, and asymmetric matrices where the probability going from $A$ to $B$ can be different from the probability for the reverse movement. 
