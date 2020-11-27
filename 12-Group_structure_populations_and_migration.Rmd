@@ -1,12 +1,11 @@
 # Group structured populations and migration
 
-Many simulations assume well-mixed populations, that is, populations of individuals that have an equal chance of encountering each other. In the previous chapter, we have looked at the effects of structured interactions on the transmission of cultural traits. Both, structured and unstructured populations, can be good approximations of the real world, depending on the context and research question. What about structured populations, a combination of the two. That is, a large population of individuals is divided into subsets, where individuals are more likely to encounter individuals from the same subset but much less likely to encounter individuals from a different subset. As such learning would only occur within each subset. However, individuals may migrate between subsets, bringing along their own selection of cultural traits, or might visit another subset and then bring a new cultural trait back home. 
+Many simulations assume well-mixed populations, that is, populations of individuals that have an equal chance of encountering each other. In the previous chapter, we have looked at the effects of structured interactions on the transmission of cultural traits. Both, structured and unstructured populations, can be good approximations of the real world, depending on the context and research question. What about structured populations, a combination of the two? That is, a large population of individuals is divided into subsets, where individuals are more likely to encounter individuals from the same subset but much less likely to encounter individuals from a different one. Here learning would almost exculsively occur within each subset. However, individuals may migrate between subsets, bringing along their own selection of cultural traits, or might visit another subset and then return with a new cultural trait. In this chapter we will take a closer look at these two scenarios.
 
-## Modelling migration
+## Modelling migration and contact between population subsets
+Before we model subset populations, let us begin by developing a simple transmission model, as we have done in the biased and unbiased learning chapters. We start with a population of size $n$, and $b$ instances of a behavioural trait. That is, an individual will only ever have one version of a behaviour, for example, greeting another individual with a handshake or by bumping elbows. We choose this to keep the example simple. Other possibilities would be, for example, to model the migration of distinct behaviours (e.g. creanza_greater_2017). 
 
-In this chapter, we will simulate this movement of traits between subsets and study its dynamics. We model a population of size $n$, with $s$ subsets, and $b$ instances of a behavioural trait. For most of this chapter, we assume that there are two versions of this behaviour, for example, two individuals greet each other either with a handshake or by bumping elbows. You will see that there are many opportunities to alter the model (e.g. more subsets, behaviours, learning events, etc.). 
-
-We will start very simply with one large population where individuals acquire a behavioural trait from a random individual in their population, and then add layers to the model. Let us set up a population. Because we are only interested in which instance of a particular behaviour an individual expresses, each individual can be fully described by its behaviour, and so, we can represent the entire population as a vector of expressed behaviours (`behaviours`). 
+Let us set up a population. Because we are only interested in which instance of a particular behaviour an individual expresses, each individual can be fully described by that instance, and so, we can represent the entire population as a vector of expressed behaviours (`behaviours`). 
 
 ```{r 12.1}
 n <- 100
@@ -16,9 +15,9 @@ behaviours <- sample(x = b, size = n, replace = TRUE)
 table(behaviours)
 ```
 
-Note that the `table()` function counts each element of a given vector. It is similar to `tabulate()` which we used previously, however, `table()` returns a named vector, so that you know exactly which element is present how many times. 
+The `table()` function counts each element of a given vector. It is similar to `tabulate()` which we used previously, however, `table()` returns a named vector, so that you know exactly which element is present how many times. 
 
-Each individual in our population expresses only one behaviour. Occasionally, one of the individuals will copy the behaviour of another individual. To simulate this behavioural updating, we a random individual (the observer), which copies a randomly selected behaviour from the population. This approach is identical to the unbiased learning in our earlier chapters. We can simulate repeated updating events by wrapping a `for` loop around the code. Additionally, we will add a record variable (`rec_behav`) to store the frequency of each behaviour.
+Each individual in our population expresses only one behaviour. Occasionally, one of the individuals will copy the behaviour of another individual. To simulate this behavioural updating, we select a random individual, which copies a randomly selected behaviour from the population. This approach is identical to the unbiased learning in our earlier chapters. We can simulate repeated updating events by wrapping a `for` loop around the code. Additionally, we will add a record variable (`rec_behav`) to store the frequency of each behaviour.
 
 ```{r 12.2, message=FALSE}
 library(tidyverse)
@@ -27,17 +26,21 @@ rec_behav <- tibble(time = 1:r_max, b1 = 0, b2 = 0)
 
 for(round in 1:r_max){
   # unbiased copying of a behaviour by a random individual
+  # select a random individual and overwrite behaviour with a random one 
+  # from the population
   behaviours[ sample(x = n, size = 1) ] <- sample(x = behaviours, size = 1)
   # record the frequency of each trait in each round
   rec_behav[round, "b1"] <- sum(behaviours==1)
   rec_behav[round, "b2"] <- sum(behaviours==2)
 }
+rec_behav
 ```
 
-To plot the results, we first need to turn our "wide" data (where repeated measures/different categories are in the same line) into "long" data (where each line has only one observation/category). While the former is easier to read, the latter is the format that is more useful in combination with `ggplot2`. To "rotate" our data we can use the `pivot_longer()` function. In its arguments we tell it to combine the results of columns `b1` and `b2` into `beaviour`, which indicates the name of the behaviour, and `freq`, which is the frequency of that behaviour. The function will repeat the entries of the `time` column accordingly:
+To plot the results with `ggplot2`, it would be bst to turn the "wide" data (where repeated measures/different categories are in the same line) into "long" data (where each line has only one observation/category). To "rotate" our data we can use the `pivot_longer()` function. In its arguments we tell it to combine the results of columns `b1` and `b2` into `beaviour`, which indicates the name of the behaviour, and `freq`, which is the frequency of that behaviour. The function will repeat the entries of the `time` column accordingly:
 
 ```{r 12.3}
-rec_behav_l <- pivot_longer(data = rec_behav, names_to = "behaviour", values_to = "freq", cols=c("b1","b2"))
+rec_behav_l <- pivot_longer(data = rec_behav, names_to = "behaviour", 
+                            values_to = "freq", cols=c("b1","b2"))
 rec_behav
 rec_behav_l
 ```
@@ -79,7 +82,7 @@ structured_population_1 <- function(n, b, r_max){
 }
 ```
 
-Note that we initially create the matrix `rec_behav`, which we then convert to a `tibble` object. The advantage here is that we can quickly create a matrix of a certain size (here, the number of rounds times number of behaviours), in which we can record the frequencies of each behaviour. The `tibble`, however, will make handling and plotting our data easier. The `.name_repair = "minimal"` argument is for compatibility reasons and should not concern us here. 
+Note that we initially create the matrix `rec_behav`, which we then convert to a `tibble` object. The advantage here is that we can quickly create a matrix of a certain size (here, the number of rounds times number of behaviours), in which we can record the frequencies of each behaviour. The `tibble`, however, will make handling and plotting our data easier. The `.name_repair = "minimal"` argument is for compatibility reasons and should not concern us here further. 
 
 Let us test what would happen if we ran this simulation with a very small population size of $n=20$:
 
@@ -95,11 +98,11 @@ ggplot(res) +
   theme_bw()
 ```
 
-We observe that the two behaviours fluctuate around $0.5$ until, by chance, one behaviour is completely replaced by the other one. This is simply due to drift, which affects all small populations or very long time scales.
+We observe that the two behaviours fluctuate around $0.5$ until, by chance, one behaviour is completely replaced by the other one. This is simply due to drift, which affects all small populations or very long time scales. 
 
 
 ## Subdivided population with limited contact
-Let us move on from this single population example to a version where the population is divided into subsets or `clusters`. For simplicity let us work with only two behaviours here, so that we only need to track the frequency of one behaviour, $p$, in each subset as the frequency of the other is simply $1-p$. We will also assume that there are the same number, $n$, of individuals in each cluster, $c$. 
+Let us now move on from the single population to a population that is divided into subsets (we will call them `clusters`, as `subset` is generic function in R). For simplicity, we will assume only two instances of a behaviour. That way, we only need to track the frequency of one behaviour, $p$, in each subset as the frequency of the other is simply $1-p$. We will also assume that there are the same number, $n$, of individuals in each cluster, $c$. 
 
 ```{r 12.7}
 structured_population_2 <- function(n, c, r_max){
@@ -125,17 +128,15 @@ structured_population_2 <- function(n, c, r_max){
 }
 ```
 
-This function is very similar to `migration_omdel_1()` but accounts for the additional clusters. For example, the columns of `rec_behav` now store $p$ for each cluster. We calculate these values in every time step. We could also just calculate it for the cluster of the observing individual, however, if we keep the calculation more general, we will not have to change the code if we allow individuals to permanently move from one cluster to another, in which case we would need to calculate $p$ for both clusters. 
+This function is very similar to `migration_omdel_1()` but accounts for the additional clusters. For example, the columns of `rec_behav` now store $p$ for each cluster. We calculate these values in every time step. We could also just calculate it for the cluster of the observing individual, however, if we keep the calculation more general, we will not have to change the code should we want individuals to be able to permanently move from one cluster to another. In that case we would need to calculate $p$ for both clusters. 
 
 Also, note that this time we did not tell `pivot_longer()` which columns to pivot but which one we want to keep unchanged (`!time`). This is because we do not know the numbers of columns before we run the simulation. Therefore, it is easier to just make an exception for the time column.
 
 Let us run the simulation for 4 subsets with each 50 individuals:
 
 ```{r 12.8, fig.cap="The frequency of one out of two behaviours in two subsets will fluctuate around 0.5 if individuals are equally likely to learn from individuals in both subsets (or clusters)."}
-# run simulation
 res <- structured_population_2(n = 50, c = 4, r_max = 1000)
 
-# plot results
 ggplot(res) + 
   geom_line(aes(x = time, y = p, col = cluster)) + 
   scale_y_continuous(limits = c(0,1)) + 
@@ -145,7 +146,7 @@ ggplot(res) +
 
 Executing this code repeatedly will show you two things. First, on average the frequency of each behaviour will still be around $0.5$, and second that the frequency changes are correlated between all subsets. This is expected because, with the current version of our model, individuals do not distinguish between or have different access to individuals of either cluster. In fact, the fluctuations we observe here are purely stochastic and based on the relatively small subsets (try running the code with e.g. $N=1000$).   
 
-Let us now move on to the case where members of a subset preferentially learn from others within their cluster. This might be the case where individuals spent most of their time in their subsets and only occasionally interact with individuals from other subsets. To simulate this we can use most of the code from `structured_population_2()` with a few small changes. First, we will change the `sample()` function. Instead of sampling the entire population, we want the observer to sample preferentially (or exclusively) from its own cluster. To achieve this, we will use the `prob` argument in the `sample()`. This argument gives a weight (or probability) with which an element of a provided set is chosen. By default, each element has a weight of $1$ (or a probability of $1/N$) and thus is equally likely to be selected. To limit our scope to individuals within the same cluster, we can simply set the weight to $0$ for all individuals that are in a different cluster and to $1$ for those that are in the same cluster. Assuming an individual is in cluster `2` then we select all other individuals in the same cluster using `cluster == clusterid`, where `clusterid` is 2. This will return a vector with `TRUE` and `FALSE` values. We can turn this into weights (i.e. 0s and 1s) simply by multiplying the vector with 1, R will then automatically turn this logical into a numeric vector. Additionally, we will select two individuals from the cluster, an observer, and a demonstrator (or model). Of course, we can only perform this, `if` there are at least 2 individuals in the cluster. Take a look at the new function:
+Let us now move on to the case where members of a subset preferentially learn from others within their cluster. This might be the case where individuals spent most of their time in their subsets and only occasionally interact with individuals from other subsets. To simulate this, we can use most of the code from `structured_population_2()` with a few small changes. First, we will change the `sample()` function. Instead of sampling the entire population, we want the observer to sample preferentially (or exclusively) from its own cluster. To achieve this, we will use the `prob` argument in the `sample()`. This argument gives a weight (or probability) with which an element of a provided set is chosen. By default, each element has a weight of $1$ (or a probability of $1/N$) and thus is equally likely to be selected. To limit our scope to individuals within the same cluster, we can simply set the weight to $0$ for all individuals that are in a different cluster and to $1$ for those that are in the same cluster. Assuming an individual is in cluster `2` then we select all other individuals in the same cluster using `cluster == cluster_id`, where `cluster_id` is 2. This will return a vector with `TRUE` and `FALSE` values. We can turn this into weights (i.e. 0s and 1s) simply by multiplying the vector with 1, R will then automatically turn the boolean into a numeric vector. Additionally, we will select two individuals from the cluster, an observer, and a demonstrator (or model). Of course, we can only perform this, `if` there are at least 2 individuals in the cluster. Take a look at the new function:
 
 ```{r 12.9}
 structured_population_3 <- function(n, c, r_max){
@@ -156,12 +157,12 @@ structured_population_3 <- function(n, c, r_max){
   
   for(round in 1:r_max){
     # choose a random cluster
-    clusterid <- sample(c, 1)
+    cluster_id <- sample(c, 1)
     # if there are at least two individuals in this cluster
-    if(sum(cluster == clusterid)>1){
+    if(sum(cluster == cluster_id)>1){
       # choose a random observer and a random individual to observe within the same cluster 
       observer_model <- sample(x = total_pop, size = 2, replace = F, 
-                               prob = (cluster == clusterid)*1)
+                               prob = (cluster == cluster_id)*1)
       behaviours[ observer_model[1] ] <- behaviours[ observer_model[2] ]
     }
 
@@ -173,7 +174,7 @@ structured_population_3 <- function(n, c, r_max){
 }
 ```
 
-You might have noticed a new function at the very end: `matrix_to_tibble()`. This is a little helper function. As we keep turning matrices into tibbles at the end of our simulation, we can also isolate this process in its own function and re-cycle it in the future versions of our simulation function. Here is the code for the helper function: 
+You might have noticed a new function at the very end: `matrix_to_tibble()`. This is a little helper function. As we keep turning matrices into tibbles, changing their column names, and adding a time column at the end of our simulation, we can also separate this process in its own function and re-cycle it in the future versions of our simulation function. This is generally useful whenever you have a piece of code that you keep replicating. This is what the helper function looks like: 
 
 ```{r 12.10}
 matrix_to_tibble <- function(m){
@@ -196,7 +197,7 @@ ggplot(res) +
   theme_bw()
 ```
 
-When we run this simulation repeatedly, you will see that sometimes one of the behaviours gets lost in one, both, or neither of the clusters. Because in this iteration of our simulation there are no interactions between individuals of different clusters, we are essentially simulating three independent populations. 
+When we run this simulation repeatedly, you will see that sometimes behaviour 1 gets lost in one, both, or neither of the clusters. Because in this iteration of our simulation there are no interactions between individuals of different clusters, we are essentially simulating three (small) independent populations. 
 
 Let us change the code so that we can alter the rate at which individuals from different subsets might encounter each other. In mathematical terms, let $\omega = s$ be the probability to observe another individual, with $s = 0$ for individuals of another subset and $s=1$ for individuals of the same subset. We can alter $\omega$ to allow interaction with individuals from another subset by adding a contact probability, $p_c$, such that $\omega = \frac{s + p_c}{1+p_c}$. We divide by $1+p_c$ to keep $0 \leq \omega \leq 1$. With this change the probability to encounter an individual from any subset is at least $p_c$. Take a look at the updated function: 
 
@@ -208,8 +209,8 @@ structured_population_4 <- function(n, c, p_c, r_max){
   rec_behav <- matrix(NA, nrow = r_max, ncol = c)
   
   for(round in 1:r_max){
-    clusterid <- sample(c, 1)
-    s <- cluster == clusterid
+    cluster_id <- sample(c, 1)
+    s <- cluster == cluster_id
     if(sum(s)>1){
       # choose a random observer and a random individual to observe within the same cluster 
       observer_model <- sample(x = total_pop, size = 2, replace = F, 
@@ -257,9 +258,7 @@ With $p_c = 0$, the subsets (again) act as independent populations that fluctuat
 
 
 ## Subdivided populations with migration
-Let us now simulate migration of individuals (and their cultural trait) between subsets. 
-
-To model (physical) migration, we will add the migration probability $p_m$ to the model (with no migration where $p-m=0$, and always migrating to another subset where $p_m=1$):
+In the previous section we have modelled the movement of cultural traits between subsets due to occasional interactions. Let us now simulate the movement of individuals (and their cultural trait) between subsets. To model migration, we will add a migration probability $p_m$ to the model (with no migration where $p-m=0$, and always migrating to a random subset where $p_m=1$):
 
 ```{r 12.16}
 structured_population_5 <- function(n, c, p_c, p_m, r_max){
@@ -269,8 +268,8 @@ structured_population_5 <- function(n, c, p_c, p_m, r_max){
   rec_behav <- matrix(NA, nrow = r_max, ncol = c)
   
   for(round in 1:r_max){
-    clusterid <- sample(c, 1)
-    s <- cluster == clusterid
+    cluster_id <- sample(c, 1)
+    s <- cluster == cluster_id
     if(sum(s)>1){
       observer_model <- sample(x = total_pop, size = 2, replace = F, 
                                prob = (s + p_c) / (1 + p_c))
@@ -281,7 +280,7 @@ structured_population_5 <- function(n, c, p_c, p_m, r_max){
     # one subset
     if((runif(1,0,1) <= p_m) & (c > 1)){
       # set cluster id that is different from the current one
-      cluster[ observer_model[1] ] <- sample((1:c)[-clusterid], 1)
+      cluster[ observer_model[1] ] <- sample((1:c)[-cluster_id], 1)
     }
     
     for(clu in 1:c){
@@ -292,7 +291,7 @@ structured_population_5 <- function(n, c, p_c, p_m, r_max){
 }
 ```
 
-The migration code chunk is doing two things. First, we make sure that migration only happens with the migration probability $p_m$ (`runif(1,0,1) <= p_m`) and only if the population is actually subset (`c>1`). And second, if the statement is `TRUE`, we choose one new cluster ID among all cluster IDs but without the current one (`sample((1:c)[-clusterid], 1)`). 
+The migration code chunk is doing two things. First, we make sure that migration only happens with the migration probability $p_m$ (for that, we compare a random value from a uniform distribution with `p_m`: `runif(1,0,1) <= p_m`) and only if the population is actually subset (`c>1`). And second, if the statement is `TRUE`, we choose one new cluster ID among all cluster IDs but without the current one (`sample((1:c)[-cluster_id], 1)`). 
 
 Let us run the simulation for three different migration probabilities, $p_m \in \{0, 0.1, 1 \}$. Let us also run the simulations much longer so that we will get to a case where a behaviour might get fixed in the subsets or the population:
 
@@ -310,7 +309,7 @@ ggplot(res_0) +
 
 For $p_m=0$ we find that the subsets act independently and fix either on behaviour 1 or 2. 
 
-```{r 12.18, fig.cap="When $p_m=1$ the subsets act again as a single population."}
+```{r 12.18, fig.cap="When $p_m=1$ the subsets act again as a single population. "}
 ggplot(res_1) + 
   geom_line(aes(x = time, y = p, col = cluster)) +
   scale_y_continuous(limits = c(0,1)) + 
@@ -318,7 +317,7 @@ ggplot(res_1) +
   theme_bw()
 ```
 
-For $p_m=1$, we find that the frequency of the behaviours become correlated as more and more individuals keep moving between the clusters. Eventually, all subsets will settle on the same behaviour. 
+For $p_m=1$, we find that the frequency of the behaviours become correlated as more and more individuals keep moving between the clusters. Eventually, all subsets will settle on the same behaviour. Note also that sometimes the plotted graphs jump rapidly between 0 and 1. This is the case when a cluster is almost empty. Imagine a subset with only one individual with behaviour 1, here, $p=1$. If this individual leaves the subset the curve jumps to $p=0$. 
 
 ```{r 12.19, fig.cap="When migration is rare, the frequency of behaviour 1 changes occassionally but quickly bounes back to the original value in the subset."}
 ggplot(res_01) + 
@@ -344,8 +343,8 @@ structured_population_6 <- function(n, c, p_c, p_m, r_max, sim = 1){
   rec_var <- rep(NA, r_max)
   
   for(round in 1:r_max){
-    clusterid <- sample(c, 1)
-    s <- cluster == clusterid
+    cluster_id <- sample(c, 1)
+    s <- cluster == cluster_id
     if(sum(s)>1){
       observer_model <- sample(x = total_pop, size = 2, replace = F, 
                                prob = (s + p_c) / (1 + p_c))
@@ -353,7 +352,7 @@ structured_population_6 <- function(n, c, p_c, p_m, r_max, sim = 1){
     }
     
     if((runif(1,0,1) <= p_m) & (c > 1)){
-      cluster[ observer_model[1] ] <- sample((1:c)[-clusterid], 1)
+      cluster[ observer_model[1] ] <- sample((1:c)[-cluster_id], 1)
     }
     
     for(clu in 1:c){
@@ -437,9 +436,9 @@ So far, an individual is changing its behaviour based on observing one other ind
 
 To achieve this behaviour we can change the `observer_model` part of our model to:
 ```{r, eval=FALSE}
-if(sum(cluster == clusterid) > m){
+if(sum(cluster == cluster_id) > m){
   observer_model <- sample(x = totalpop, size = m + 1, replace = FALSE,
-                           prob = (cluster == clusterid) * 1)
+                           prob = (cluster == cluster_id) * 1)
   behaviours[ observer_model[1] ] <-
     behaviours[ sample(observer_model[2:(m + 1)], size = 1) ]
 }
@@ -454,10 +453,10 @@ For this iteration of the base model, we need to change the `migration` section.
 adj <- matrix(c(0,1,0,  1,1,1,  0,1,0), nrow = 3)
 adj
 ```
-If rows are the starting and columns the destiny subsets, then this matrix tells us that an individual in subset $A$ (first row) can move to $B$ (second column entry is a one) but not to $C$ (last column entry is a zero). Now, when we determine that an individual is moving to a different group, we can simply recall the correct row of the `adj` matrix based on the individual's `clusterid`:
+If rows are the starting and columns the destiny subsets, then this matrix tells us that an individual in subset $A$ (first row) can move to $B$ (second column entry is a one) but not to $C$ (last column entry is a zero). Now, when we determine that an individual is moving to a different group, we can simply recall the correct row of the `adj` matrix based on the individual's `cluster_id`:
 ```{r, eval=FALSE}
 if((runif(1,0,1) <= MIGRATION) & (NPOP > 1)){
-  cluster[ observer_model[1] ] <- sample((1:NPOP), size = 1, prob = adj[clusterid,])
+  cluster[ observer_model[1] ] <- sample((1:NPOP), size = 1, prob = adj[cluster_id,])
 }
 ```
 Also, this piece of code allows us to use non-binary values, where small values represent a low probability to move from one to another subset, and asymmetric matrices where the probability going from $A$ to $B$ can be different from the probability for the reverse movement. 
