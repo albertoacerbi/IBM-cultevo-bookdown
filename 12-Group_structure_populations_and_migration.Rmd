@@ -317,7 +317,7 @@ ggplot(res_1) +
   theme_bw()
 ```
 
-For $p_m=1$, we find that the frequency of the behaviours become correlated as more and more individuals keep moving between the clusters. Eventually, all subsets will settle on the same behaviour. Note also that sometimes the plotted graphs jump rapidly between 0 and 1. This is the case when a cluster is almost empty. Imagine a subset with only one individual with behaviour 1, here, $p=1$. If this individual leaves the subset the curve jumps to $p=0$. 
+For $p_m=1$, we find that the frequency of the behaviours become correlated as more and more individuals keep moving between the clusters. Eventually, all subsets will settle on the same behaviour. You might have also noticed that sometimes the curve for one or more subsets jump between 0 and 1. This is the case when a subset is almost empty. Imagine a subset with only one individual with behaviour 1, then $p=1$. If this individual leaves the subset the curve jumps to $p=0$. We are less likely to observe empty subsets if we let them start out bigger (say $N=100$). 
 
 ```{r 12.19, fig.cap="When migration is rare, the frequency of behaviour 1 changes occassionally but quickly bounes back to the original value in the subset."}
 ggplot(res_01) + 
@@ -331,7 +331,7 @@ For rare migration ($p_m=0.1$), we sometimes find the population to fix on one b
 
 
 ## Varying contact and migration probability for repeated simulation runs
-We have seen that both the migration and the contact probability affect the distribution of behaviour 1 and 2 in the population. In this last section let us run the model for different pairs of $p_c$ and $p_m$ to more systematically analyse the individual and combined effect of contact and migration probability. To do this, let us slightly change our simulation function and return a measure for how similar (or different) the proportion of behaviour 1 is among the subsets. We could, for example, calculate the variance as a measure for the variability between subsets (using `var(rec_behav)`). In this case, we do not need to store the frequency of behaviour 1 in each subset and for each round (in `rec_behav`), instead we only need to calculate it for the current round:
+We have seen that both the migration and the contact probability affect the distribution of behaviour 1 and 2 in the population. In this last section let us run the model for different pairs of $p_c$ and $p_m$ to more systematically analyse the individual and combined effect of contact and migration probability. To do this, let us  change our simulation function so that it returns a measure for how similar (or different) the proportion of behaviour 1 is among the subsets. We could, for example, calculate the variance as a measure for the variability between subsets (using `var(rec_behav)`). In this case, we do not need to store the frequency of behaviour 1 in each subset and for each round (in `rec_behav`), instead we only need to calculate it for the current round to calculate the variance:
 
 ```{r 12.20}
 structured_population_6 <- function(n, c, p_c, p_m, r_max, sim = 1){
@@ -377,7 +377,7 @@ head(grid)
 dim(grid)
 ```
 
-We will again use the `lapply()` function to run many independent simulations in parallel. We combine the `list` element that `lapply()` returns into a single object by binding the rows of each result together, by wrapping `bind_rows()` around the function. The `lapply()` function will execute `structured_population_6()` with fixed arguments for subsets (`c`), subset size (`n`), and number of rounds (`r_max`). Arguments `p_m` and `p_c` are selected from the `grid` table that we just created. To get the right parameters for the right simulation run, `lapply()` is handing over a variable that we called `i` (this is an arbitrary name and you could also choose any other name here). `i` is an element of the data that we handed over, here `1:nrow(grid)`, i.e. values from 1:20 (note, we could have also used `1:20` but should you ever change the number of repetitions in your grid object, you would have to also make this change manually in the `lapply()` function, using `nrow(grid)` is taking care of this automatically). We will also use `i` as our `sim` argument, which will help us to tell individual simulations apart later. 
+We will again use the `lapply()` function to run many independent simulations in parallel. We combine the `list` element that `lapply()` returns into a single object by binding the rows of each result together, by wrapping `bind_rows()` around the function. The `lapply()` function will execute `structured_population_6()` with fixed arguments for the number of subsets (`c`), subset size (`n`), and number of rounds (`r_max`). Arguments `p_m` and `p_c` are selected from the `grid` table that we just created. To get the right parameters for the right simulation run, `lapply()` is handing over a variable that we called `i` (this is an arbitrary name and you could also choose any other name here). `i` is an element of the data that we handed over, here `1:nrow(grid)`, i.e. values from 1:20 (note, we could have also used `1:20` but should you ever change the number of repetitions in your grid object, you would have to also make this change manually in the `lapply()` function, using `nrow(grid)` is taking care of this automatically). We will also use `i` as our `sim` argument, which will help us later to tell individual simulations apart. 
 
 ```{r 12.22, cache = TRUE}
 res <- bind_rows(lapply(1:nrow(grid), function(i) 
@@ -391,7 +391,7 @@ res <- bind_rows(lapply(1:nrow(grid), function(i)
 res
 ```
 
-Now, let us plot how variance changes over time for each simulation. We could just use `geom_line(aes(x = time, y = var, group = sim), alpha=.5)` to plot the individual simulation runs (not that we have grouped the results by their `sim` indicator). However, the results for the different $p_m$ and $p_c$ values would be all in the same plot. Ggplot2 allows us to quickly separate the simulations based on these two values with the `facet_grid()` function. And so, we will add `facet_grid(p_m ~ p_c, labeller = label_both)` which will separate the results based on $p_m$ and $p_c$. The label argument will add the name of the variable to the columns and rows of the plotted grid. This makes it easier to identify the pairs of parameters for each plot:
+Now, let us plot how variance changes over time for each simulation. We could just use `geom_line(aes(x = time, y = var, group = sim), alpha=.5)` to plot the individual simulation runs (not that we have grouped the results by their `sim` indicator). However, the results for the different $p_m$ and $p_c$ values would be all in the same plot. Ggplot2 allows us to quickly separate the simulations based on these two values with the `facet_grid()` function. And so, we will add `facet_grid(p_m ~ p_c, labeller = label_both)` which will separate the results based on $p_m$ and $p_c$. The `labeller` argument will add the name of the variable to the columns and rows of the plotted grid (without this argument the column and row titles would only show the numeric values). This makes it easier to identify the pairs of parameters for each plot:
 
 ```{r 12.23, fig.cap="In the absence of contact and migration ($p_m=p_c=0$) the variance is highest between subsets. The variance decreases more quickly as $p_c$ increases compared to $p_m$."}
 ggplot(res) +
@@ -401,9 +401,11 @@ ggplot(res) +
   theme_bw()
 ```
 
-As we have seen in the previous results in the absence of migration and contact the variance is highest, whereas it is lowest when both $p_m$ and $p_c$ are 1. However, we also see that variance drops faster as $p_c$ increases compared to the same increase in $p_m$ (compare $p_c=0.1, p_m=0$ and $p_c=0, p_m=0.1$). Sometimes we will not have the space to plot a grid like this. In that case, we could condense the results further down by averaging, say, the last $20\%$ of the simulation rounds over all simulations and then plot a single value for each parameter pair. A good visualisation for this is the raster, which ggplot provides to us with the `geom_raster()` function. 
+In accordance with our previous results in the absence of migration and contact the variance is highest, whereas it is lowest when both $p_m$ and $p_c$ are 1. However, we also see that variance drops faster as $p_c$ increases compared to the same increase in $p_m$ (compare $p_c=0.1, p_m=0$ and $p_c=0, p_m=0.1$).
 
-We can summarise our data using the following `tidyverse` functions: we use `filter()` to select only the rows of the last $20\%$ of our simulation turns, handing this over (`%>%`) to the `group_by()` function, which will create groups where `p_m` and `p_c` are identical, and then `summarise()` to add a new column with the average `var` values from our results object. We will store the sumamrised result in `res_summ`. 
+Sometimes we will not have the space to plot a grid like this. In that case, we could condense the results further down by averaging, say, the last $20\%$ of the simulation rounds over all simulations and then plot a single value for each parameter pair. A good visualisation for this is the raster, which ggplot provides with the `geom_raster()` function. 
+
+But first, we need to summarise our data using the following `tidyverse` functions: we use `filter()` to select only the rows of the last $20\%$ of our simulation turns, handing this over (`%>%`) to the `group_by()` function, which will create groups where `p_m` and `p_c` are identical, and then `summarise()`, which will add a new column with the average `var` values from our results object. We will store the sumamrised result in `res_summ`:
 
 ```{r 12.24}
 res_summ <- filter(res, time >= (max(time)*.8)) %>% 
